@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/login.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "/js/vue.esm-browser.js"
+        }
+      }
+    </script>
+</head>
+<body>
+<div style="text-align: center;">
+    <img src="/img/logo.png" style="margin: 20px 0; max-width: 550px; width: 80vw;"/>
+</div>
+
+
+<script type="module">
+  import {createApp} from 'vue'
+  import MyComponent from './vueComponents/signup.js'
+
+  createApp(MyComponent).mount('#app')
+</script>
+
+<section class="prompt">
+    <div id="app" ref="root" token="<%= csrfToken %>"></div>
+</section>
+
+
+<section class="prompt">
+    <a class="button social google" href="/login/federated/google">Sign in with Google</a>
+    <a class="button social linkedin" href="/login/federated/linkedin">Sign in with LinkedIn</a>
+    <a class="button social facebook" href="/login/federated/facebook">Sign in with Facebook</a>
+    <a class="button social twitter" href="/login/federated/twitter">Sign in with Twitter</a>
+    <a class="button apple" href="/login/federated/apple">Sign in with Apple</a>
+</section>
+
+<footer class="info">
+</footer>
+</body>
+</html>

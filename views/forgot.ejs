@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/login.css">
+    <!-- <script type="module" src="/components/login.js"></script> -->
+</head>
+<body>
+
+<div style="text-align: center;">
+    <img src="/img/logo.png" style="margin: 20px 0; max-width: 550px; width: 80vw;"/>
+</div>
+
+<section class="prompt">
+    <div>
+        <h1>Forgot Password</h1>
+        <p>Enter your username or email address to get a link for resetting the password</p>
+        <% if (hasMessages) { %>
+            <section class="messages">
+                <% messages.forEach(function(message) { %>
+                    <p><%= message %></p>
+                <% }); %>
+            </section>
+        <% } %>
+        <form action="/forgot" method="post">
+            <section>
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" autocomplete="username" autofocus>
+            </section>
+            <section>
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" autocomplete="email" autofocus>
+            </section>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit">Send Reset Password Email</button>
+        </form>
+        <hr>
+        <p class="help">Already have an account? <a href="/login">Login</a></p>
+        <p class="help">Don't have an account? <a href="/signup">Sign up</a></p>
+    </div>
+</section>
+
+<section class="prompt">
+    <% if (hasMessages) { %>
+        <section class="messages">
+            <% messages.forEach(function(message) { %>
+                <p><%= message %></p>
+            <% }); %>
+        </section>
+    <% } %>
+    <a class="button social google" href="/login/federated/google">Sign in with Google</a>
+        <a class="button social linkedin" href="/login/federated/linkedin">Sign in with LinkedIn</a>
+    <a class="button social facebook" href="/login/federated/facebook">Sign in with Facebook</a>
+    <a class="button social twitter" href="/login/federated/twitter">Sign in with Twitter</a>
+    <a class="button apple" href="/login/federated/apple">Sign in with Apple</a>
+</section>
+
+<footer class="info">
+</footer>
+
+</body>
+</html>

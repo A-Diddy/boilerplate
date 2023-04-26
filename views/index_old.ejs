@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/app.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+        }
+      }
+
+    </script>
+</head>
+<body class="main" style="height:100vh; width:100vh; max-width: 100%">
+
+<section class="mainapp">
+    <div style="width:100%; position: absolute; left:0; top: -120px;">
+        <img src="/img/logo.png" style="margin: 0 auto; max-width: 300px;"/>
+    </div>
+    <nav class="nav">
+        <ul>
+            <li class="user"><%= user.username || user.name %></li>
+            <li>
+                <form action="/logout" method="post">
+                    <button class="logout" type="submit">Sign out</button>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                </form>
+            </li>
+        </ul>
+    </nav>
+
+
+    <script type="module">
+      import {createApp} from './js/vue.esm-browser.js';
+      import App from './vueComponents/App.js';
+
+      createApp(App).mount('#app');
+    </script>
+
+    <section>
+        <div id="app" ref="root"></div>
+    </section>
+</section>
+
+<div id="pspdfkit" style="height:100%; width:100%;"></div>
+<footer class="info">
+
+</footer>
+
+
+</body>
+</html>

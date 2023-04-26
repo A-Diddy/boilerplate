@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/app.css">
+    <title>ExampleBoilerplate.com</title>
+<!--    <title><%= title %></title>-->
+    <script defer src="/js/chunk-vendors.907076fc.js"></script>
+    <script src="/js/app.8bd00ae1.js"></script>
+    <link rel="icon" type="image/svg+xml" href="/app/img/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/app/img/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/app/img/icons/favicon-16x16.png">
+    <link rel="manifest" href="/app/manifest.json">
+    <meta name="theme-color" content="#4DBA87">
+    <meta name="apple-mobile-web-app-capable" content="no">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ExampleBoilerplate">
+    <link rel="apple-touch-icon" href="/app/img/icons/apple-touch-icon-152x152.png">
+    <link rel="mask-icon" href="/app/img/icons/safari-pinned-tab.svg" color="#4DBA87">
+    <meta name="msapplication-TileImage" content="/app/img/icons/msapplication-icon-144x144.png">
+    <meta name="msapplication-TileColor" content="#000000">
+</head>
+
+
+<body class="main" style="height:100vh; width:100vh; max-width: 100%">
+
+<section class="mainapp">
+    <div style="width:100%; position: absolute; left:0; top: -120px; text-align: center;">
+        <img src="/img/logo.png" style="margin: 0 auto; max-width: 300px; width: 80vw;"/>
+    </div>
+    <nav class="nav">
+        <ul>
+            <li class="user"><%= user?.username || user?.name %></li>
+            <li>
+                <form action="/logout" method="post">
+                    <button class="logout" type="submit">Sign out</button>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                </form>
+            </li>
+        </ul>
+    </nav>
+
+
+<!--    <script type="module">-->
+<!--      import {createApp} from './js/vue.esm-browser.js';-->
+<!--      import App from './vueComponents/App.js';-->
+
+<!--      createApp(App).mount('#app');-->
+<!--    </script>-->
+
+    <section>
+        <div id="app" ref="root"></div>
+    </section>
+</section>
+
+<div id="pspdfkit" style="height:100%; width:100%;"></div>
+<footer class="info">
+
+</footer>
+
+
+</body>
+</html>

@@ -1,0 +1,286 @@
+openapi: 3.0.3
+info:
+  title: IO Service
+  description: Data persistence... create, retrieve, updated and delete records.
+  termsOfService: https://www.ExampleBoilerplate.com/terms-conditions
+  contact:
+    email: astuart@reachtalent.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+  - url: https://ExampleBoilerplate.com/
+tags:
+  - name: ExampleBoilerplate.com
+    description: Data persistence endpoints
+    externalDocs:
+      description: Find out more
+      url: https://ExampleBoilerplate.com
+paths:
+  /io:
+    post:
+      summary: Update an existing record or insert a new record based on UUID.
+      operationId: insertUpdate
+      tags:
+        - io
+      parameters:
+        - name: index
+          in: query
+          required: false
+          description: Type of record. This resolves to the table to insert into. Defaults to 'io' table.
+          schema:
+            type: string
+      requestBody:
+        description: The keys and values to be patched
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IOObj"
+      responses:
+        '200':
+          description: Existing object found and was successfully updated.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '201':
+          description: New object was successfully inserted.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '218':
+          description: Request received, but you may want to double check it.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    get:
+      summary: Retrieve an existing record by UUID (id).
+      operationId: getById
+      tags:
+        - io
+      parameters:
+        - name: index
+          in: query
+          required: true
+          description: Type of record. This resolves to the table to retrieve from. Defaults to 'io' table.
+          schema:
+            type: string
+        - name: id
+          in: query
+          required: true
+          description: UUID of object to retrieve.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Existing object.
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  type: object
+                  additionalProperties: true
+                  format: json
+        '202':
+          description: Request processed, but object not found... nothing to do.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '218':
+          description: Request received, but you may want to double check it.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"                
+    delete:
+      summary: Delete an existing object with the specified ID (from the body)
+      operationId: deleteObject
+      tags:
+        - io
+      parameters:
+        - name: index
+          in: query
+          required: false
+          description: Type of record. This resolves to the table to delete from. Defaults to 'io' table.
+          schema:
+            type: string
+        - name: id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: Object was successfully deleted.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '202':
+          description: Request processed, but object not found... nothing to do.
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /io/{index}/{id}:
+    get:
+      summary: Retrieve an existing record by ID (as a URL parameter).
+      operationId: getByIdFromPath
+      tags:
+        - io
+      parameters:
+        - name: index
+          in: path
+          required: true
+          description: Type of record. This resolves to the table to retrieve from. Defaults to 'io' table.
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          description: UUID of object to retrieve.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Existing object.
+          content:
+            application/json:
+              schema:
+                type: object
+                items:
+                  type: object
+                  additionalProperties: true
+                  format: json
+        '201':
+          description: New object was successfully inserted.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '202':
+          description: Request processed, but object not found... nothing to do.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '218':
+          description: Request received, but you may want to double check it.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete an existing object with the specified ID (as a URL parameter)
+      operationId: deleteByIdFromPath
+      tags:
+        - io
+      parameters:
+        - name: index
+          in: path
+          required: true
+          description: Type of record. This resolves to the table to delete from. Defaults to 'io' table.
+          schema:
+            type: string
+        - name: id
+          in: path
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: Object was successfully deleted.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '202':
+          description: Request processed, but object not found... nothing to do.
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    IOObj:
+      type: object
+      required:
+        - id
+        - jsonData
+      properties:
+        id:
+          type: string
+          readOnly: true
+          nullable: true
+        jsonData:
+          type: object
+          additionalProperties: true
+          format: json
+          description: Raw contents from json_data
