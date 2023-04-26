@@ -1,0 +1,307 @@
+openapi: 3.0.3
+info:
+  title: Query Service
+  description: Query endpoint
+  termsOfService: https://www.ExampleBoilerplate.com/terms-conditions
+  contact:
+    email: austin@stusys.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+  - url: https://ExampleBoilerplate.com/
+tags:
+  - name: ExampleBoilerplate.com
+    description: Query endpoint
+    externalDocs:
+      description: Find out more
+      url: https://ExampleBoilerplate.com
+paths:
+  /q:
+    post:
+      summary: Query for a list of objects
+      operationId: query
+      tags:
+        - query
+      parameters:
+        - name: index
+          in: query
+          required: false
+          description: Type of record. This resolves to the table to query.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Max number of records to return at one time. 0 = unlimited (default)
+          schema:
+            type: integer
+            format: int32
+        - name: offset
+          in: query
+          required: false
+          description: Enables pagniation. Skips the first X number of records in the results.
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        description: Query model that will be passed to database for filtering the data.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryServiceFilter'
+      responses:
+        '200':
+          description: |
+            List/Array of database records matching the query criteria.
+            If paging is not used ('offset' or 'limit' <= 0), JSON is raw JSON stored from the json_data column.
+            Otherwise, if paging is used, results include additional properties within each result:
+             "data": Raw JSON stored in database.
+             "rowNum": Row number of the record in relation to the full (non-paged) query.
+             "rowTotal": Total number of row results in full (non-paged) query.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+                  format: json
+        '204':
+          description: No data found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+                  format: json
+        '218':
+          description: Request received, but you may want to double check it.
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          description: Unexpected error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    IOObj:
+      type: object
+      required:
+        - id
+        - jsonData
+      properties:
+        id:
+          type: string
+          readOnly: true
+          nullable: true
+        jsonData:
+          type: object
+          additionalProperties: true
+          format: json
+          description: Raw contents from json_data
+    QueryServiceFilter:
+      description: |
+        Contains the selectors, conditions, sorts, groups and projected fields necessary to perform a query.
+      type: object
+      properties:
+        selectors:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryServiceSelector'
+          description: |
+            Array of QueryServiceSelector objects that define query selectors.
+            These selectors are appended together.
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryServiceCondition'
+          description: |
+            Array of QueryServiceCondition objects that define query conditions for non-array elements.
+            These conditions are ANDed together with all other conditions defined
+        arrayConditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryServiceConditionMap'
+        nativeConditions:
+          type: array
+          items:
+            type: string
+          description: |
+            Array of query conditions defined in the native Elasticsearch query DSL.
+            These conditions are ANDed together with all other conditions defined
+        sorts:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryServiceSort'
+          description: Array of DescriptorQuerySort objects that define the sort order
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryServiceGroup'
+          description: Array of DescriptorQueryGroup objects that define the grouping
+    QueryServiceSelector:
+      description: A query selector clause
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: |
+            JSON property path to select (in dot notation).
+        func:
+          type: string
+          enum:
+            - COUNT
+          description: |
+            Function to apply to the specified path.
+    QueryServiceCondition:
+      description: A query condition clause
+      type: object
+      required:
+        - path
+        - operator
+        - values
+      properties:
+        path:
+          type: array
+          items:
+            type: string
+          description: |
+            Query conditions ("...WHERE <path> <operator> <values> ..."). 
+            Example: {path: "name", operator: EQ, values: ["Ronan"]} 
+            Result: ... WHERE name = 'Ronan' ...
+        operator:
+          type: string
+          enum:
+            - EQ
+            - NEQ
+            - GTE
+            - GT
+            - LTE
+            - LT
+            - IN
+            - NIN
+            - LIKE
+            - HAS
+          description: |
+            "EQ": ==
+            "NEQ": != (True if the property doesn't exist or doesn't equal the provided value).
+            "GTE": >=
+            "GT": >
+            "LTE": <=
+            "LT": <
+            "IN": True if the property contains any of the values provided.
+            "NIN": "NOT IN". True if the property does not contain any of the provided values. Requires at least one value.
+            "LIKE": True if any part of the property contains the string value (adds wildcards ['%'] to beginning and end of the value provided).
+            "HAS": True if any value provided exists in the specified properties and/or
+              Does not use a 'path' argument. Instead, the path needs to be provided in the value... 
+              Example for searching sub-properties: {property: {subproperty: "value"}}
+              Example for searching through multiple array values: {property: [{property: "value"}]}
+              For example... if {"a": 1, "b": 2} HAS {b: "2"} then true; if ["a", "b"] HAS ["b"] then true;
+        values:
+          type: array
+          items:
+            type: string
+          description: |
+            Array of values to filter on e.g. [White, Black].
+            Values may contain regexp characters when the operator is LIKE.
+        conditional:
+          type: string
+          enum:
+            - OR
+            - AND
+          description: |
+            "AND" (default) or "OR"
+        subConditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryServiceCondition'
+          description: |
+            Array of conditions to group with the parent/primary condition. For example,
+            if...
+            subConditions[0].conditional = "AND" and subConditions[1].conditional = "OR"
+            then...
+            ( parentCondition AND ( subCondition[0] OR ( subCondition[1] ) ) )
+        usePhonetic:
+          type: boolean
+          default: false
+          description: Whether to perform a phonetic / soundex match
+        matchCase:
+          type: boolean
+          default: true
+          description: Whether to perform a case sensitive match
+        dateFormat:
+          type: string
+          description: |
+            If set this condition is treated as a date query.
+            Represents the date format the filter string is in.
+            Uses SimpleDateFormat syntax
+    QueryServiceConditionGroup:
+      description: A group of correlated query condition clauses
+      type: object
+      required:
+        - conditions
+      properties:
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryServiceCondition'
+    QueryServiceConditionMap:
+      type: object
+      items:
+        $ref: '#/components/schemas/QueryServiceConditionGroup'
+      description: |
+        Map of array of QueryServiceCondition objects that define query conditions for correlated array elements.
+        These conditions are ANDed together with all other conditions defined.
+    QueryServiceSort:
+      description: A sort order clause
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: JSON path of the descriptor to sort by
+        sortOrder:
+          type: string
+          enum:
+            - ASC
+            - DESC
+          default: ASC
+    QueryServiceGroup:
+      description: A grouping clause
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: JSON path of the descriptor to group by (in dot notation).

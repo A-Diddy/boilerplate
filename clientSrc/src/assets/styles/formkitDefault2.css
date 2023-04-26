@@ -1,0 +1,24 @@
+form.formkit-form {
+  margin: 0 auto;
+  max-width: 800px;
+  padding: 20px;
+}
+.formkit-wrapper {
+  max-width: 100%;
+}
+
+/****** Apply Vuetify theming ******/
+.formkit-input {
+  color: inherit;
+}
+div[data-type="taglist"] .formkit-dropdown-wrapper {
+  background-color: inherit;
+}
+div[data-type="taglist"] .formkit-listbox {
+  background-color: inherit;
+}
+.formkit-outer:not([data-overscroll]) .formkit-dropdown-wrapper {
+  cursor: pointer;
+  color: rgb(var(--theme-primary-color));
+  background-color: rgb(var(--v-theme-background));
+}
