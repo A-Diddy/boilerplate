@@ -17,7 +17,6 @@ const router = express.Router();
  *
  *********************************************************/
 router.get( /([/-]\w*)+/, (req, res, next) => {
-
   if (req.path.includes(".") || req.path.includes('favicon')) {
     return next();
   }
@@ -29,6 +28,7 @@ router.get( /([/-]\w*)+/, (req, res, next) => {
   // }
 
   logger.info(`[AppRouter] Redirecting to main app from '${req.originalUrl}'`);
+  console.log(`[AppRouter] Redirecting to main app from '${req.originalUrl}'`);
 
   req.url = "/";                          // Set the route to process this request with
   req.session.returnTo = req.originalUrl; // This will take us back to the og app route after authentication, if needed.

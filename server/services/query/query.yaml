@@ -201,21 +201,22 @@ components:
         operator:
           type: string
           enum:
-            - EQ
-            - NEQ
-            - GTE
-            - GT
-            - LTE
-            - LT
-            - IN
-            - NIN
-            - LIKE
-            - HAS
+            - EQ: "="
+            - NEQ: "!="
+            - GTE: ">="
+            - GT: ">"
+            - LTE: "<="
+            - LT: "<"
+            - IN: "IN"
+            - NIN: "NOT IN"
+            - LIKE: "LIKE"
+            - HAS: "HAS"
           description: |
-            "EQ": ==
-            "NEQ": != (True if the property doesn't exist or doesn't equal the provided value).
-            "GTE": >=
-            "GT": >
+            The SQL operator to use for the condition.
+            "EQ": Equal to (==)
+            "NEQ": Not equal to (!=) (True if the property doesn't exist or doesn't equal the provided value).
+            "GTE": Greater than or equal to (>=)
+            "GT": Greater than (>)
             "LTE": <=
             "LT": <
             "IN": True if the property contains any of the values provided.

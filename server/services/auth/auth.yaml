@@ -1,0 +1,289 @@
+paths:
+  /api/auth/login:
+    post:
+      operationId: login
+      tags:
+      - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      description: Use credentials to get an auth token
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/signup:
+    post:
+      operationId: signup
+      tags:
+      - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      description: Use credentials to get an auth token
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/email_verify:
+    post:
+      operationId: verifyEmail
+      tags:
+      - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerifyRequest'
+      description: Use credentials to get an auth token
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailVerifyResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/forgot_password/send:
+    post:
+      operationId: sendForgotPassword
+      tags:
+      - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendForgotPasswordRequest'
+      description: Request to email a user with a link to reset their password
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendForgotPasswordResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/forgot_password/reset:
+    post:
+      operationId: resetForgotPassword
+      tags:
+      - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      description: Reset Password
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetPasswordResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/permissions:
+    get:
+      operationId: getPermissions
+      tags:
+      - auth
+      description: Get User's Permissions
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPermissionResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/session:
+    post:
+      operationId: updateSession
+      tags:
+      - auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthSessionRequest'
+      description: Refresh JWT Session and Optional switch active client
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+info:
+  title: boilerplate
+  version: 0.0.1
+openapi: 3.0.2
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+      - email
+      - password
+    LoginResponse:
+      type: object
+      properties: {}
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        name:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        description:
+          type: string
+      required:
+      - code
+      - name
+    SignupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        password:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+      - email
+      - name
+      - password
+    SignupResponse:
+      type: object
+      properties: {}
+    EmailVerifyRequest:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+      - token
+    EmailVerifyResponse:
+      type: object
+      properties: {}
+    SendForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    SendForgotPasswordResponse:
+      type: object
+      properties: {}
+    ResetPasswordRequest:
+      type: object
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - token
+    ResetPasswordResponse:
+      type: object
+      properties: {}
+    Permission:
+      type: object
+      properties:
+        name:
+          type: string
+        action:
+          type: string
+        entity:
+          type: string
+        field:
+          type: string
+    GetPermissionResponse:
+      type: object
+      properties:
+        role:
+          type: string
+        permissions:
+          $ref: '#/components/schemas/Permission'
+    AuthSessionRequest:
+      type: object
+      properties:
+        client_id:
+          type: integer
+    AuthSessionResponse:
+      type: object
+      properties: {}
+    RequisitionResponse:
+      type: object
+      properties: {}

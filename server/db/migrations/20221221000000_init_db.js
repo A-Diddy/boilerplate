@@ -1,5 +1,8 @@
-const tables = ["profiles", "orgs", "media", "events", "actions", "config", "io", "reqs", "assignments", "gigs", "applications", "approvals", "worklogs", "timesheets", "invoices", "workflows"];
+// const tables = ["profiles", "orgs", "media", "events", "actions", "config", "io", "reqs", "assignments", "gigs", "applications", "approvals", "worklogs", "timesheets", "invoices", "workflows"];
 
+const tables = ["profiles", "orgs", "media", "events", "actions", "config", "io"];
+
+// const MEDIA_BINARY_TABLE = "media_binary"
 
 exports.up = (knex) => {
   const promises = [];
@@ -8,10 +11,15 @@ exports.up = (knex) => {
     promises.push(
       knex.schema.createTable(tableName, (table) => {
         table.uuid("id", {primaryKey: true});
-        table.jsonb("json_data").notNullable();
+        table.text("index");
+        table.jsonb("json_data").notNullable().defaultTo({});
+        table.text("created_by");                 // User
+        table.text("owned_by");                   // User, role, group, etc.
         table.timestamp('created_at').defaultTo(knex.fn.now());
         table.timestamp('updated_at').defaultTo(knex.fn.now());
+
         table.index(["id"]);
+        table.index(["id", "index"]);
         table.index(["json_data"], null, "GIN");
       })
     )
@@ -21,8 +29,10 @@ exports.up = (knex) => {
     );
   });
 
+  // MEDIA_BINARY
+  //
   // promises.push(
-  //   knex.schema.createTable("media_binary", (table) => {
+  //   knex.schema.createTable(MEDIA_BINARY_TABLE, (table) => {
   //     table.uuid("id", {primaryKey: true});
   //     table.text("og_filename");
   //     table.text("media_type");
@@ -30,10 +40,16 @@ exports.up = (knex) => {
   //     table.text("size");
   //     table.jsonb("json_data").notNullable().defaultTo({});
   //     table.binary("binary_data").notNullable();
+  //     table.text("created_by");                 // User
+  //     table.text("owned_by");                   // User, role, group, etc.
   //     table.timestamp('created_at').defaultTo(knex.fn.now());
   //     table.timestamp('updated_at').defaultTo(knex.fn.now());
   //   })
   // )
+
+  // promises.push(
+  //   knex.schema.raw(getTrigger_beforeUpdate(MEDIA_BINARY_TABLE, onUpdateFunctionName))
+  // );
 
   return Promise.all(promises);
 }
@@ -54,9 +70,19 @@ exports.down = function (knex) {
     )
   });
 
-  promises.push(
-    knex.schema.dropTableIfExists("media_binary")
-  );
+  // MEDIA_BINARY
+
+  // promises.push(
+  //   knex.schema.raw(
+  //     `DROP TRIGGER IF EXISTS ${getTriggerName_beforeUpdate(
+  //       MEDIA_BINARY_TABLE
+  //     )} ON ${MEDIA_BINARY_TABLE};`
+  //   )
+  // );
+  //
+  // promises.push(
+  //   knex.schema.dropTableIfExists(MEDIA_BINARY_TABLE)
+  // );
 
 
   // This moved to init_auth_db.js

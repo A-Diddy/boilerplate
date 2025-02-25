@@ -14,13 +14,16 @@ const knexInstance = require("../server/db/knexInstance");
 const UUID = require('uuid');
 const nodemailer = require('nodemailer');
 const {userIdCookie} = require("../server/utils/corsUtils");
+const logger = require("../server/utils/logger");
+const ErrorResponse = require('./routerUtils').ErrorResponse;
+const AuthService = require("../server/services/auth/authService");
 
 const router = express.Router();
 
 const AUTH_OPTIONS = {
-  successReturnToOrRedirect: '/',
-  keepSessionInfo: true,
-  failureRedirect: '/login'
+  // successReturnToOrRedirect: '/',
+  keepSessionInfo: true
+  // ,  failureRedirect: '/auth/login'
   // ,  passReqToCallback: false
 };
 
@@ -236,7 +239,7 @@ const updateUserPassword = (userId, password) => {
  *
  ****************************************************/
 const newUserValidation = (req, res, next) => {
-  console.log("newUserValidation(", req.body, ")");
+  // console.log("newUserValidation(", req.body, ")");
   // TODO: Validate email address and username format
 
   // Validate email address and username uniqueness
@@ -249,23 +252,26 @@ const newUserValidation = (req, res, next) => {
       if (results.length > 0) {
         const result = results[0];
         let msg = "";
+        let msgs = [];
         let errCnt = 0;
 
         if (result.username === req.body.username) {
           msg += 'Username already exists. Please select another username.'
+          res.locals.messages.push({username: "Username already exists"});
           errCnt++;
         }
         if (result.email === req.body.email) {
           msg += 'Email address already exists. Please select another email address or try to <a href="/login">log in</a>.'
+          res.locals.messages.push({email: "Email already exists"});
           errCnt++;
         }
 
         if (errCnt >= 2) {
           msg += 'Need to reset your password?'
         }
-        // TODO: Add the message to the res.locals.messages array instead of updating the response body... we want to stay on the page.
-        console.log(msg);   // TODO: Why isn't this working????????????
-        return res.send(msg);
+        console.log(msg);
+        return next();
+        // return res.send(msg);
       }
       next();
     });
@@ -539,12 +545,13 @@ if (process.env['TWITTER_AUTH'] === "true") {
  * user is authenticated; otherwise, not.
  */
 passport.use(new LocalStrategy(async function verify(username, password, cb) {
-  console.log("[Auth] LocalStrategy(",username,", ",password,"): Checking user/password");
+  console.log("Retrieving user (", username, ") from db...");
   knexInstance(USERS_TABLE)
     .select('*')
     .where({"username": username})
     .then((res) => {
       if (res.length <= 0) {
+        console.log('Incorrect username or password.');
         return cb(null, false, {message: 'Incorrect username or password.'});
       }
 
@@ -552,16 +559,18 @@ passport.use(new LocalStrategy(async function verify(username, password, cb) {
 
       crypto.pbkdf2(password, row.salt, 310000, 32, 'sha256', function (err, hashedPassword) {
         if (err) {
-          return cb(err);
+          return cb(err, false, {message: 'Unable to hash password.'});
         }
         if (!crypto.timingSafeEqual(row.hashed_password, hashedPassword)) {
+          console.log('Incorrect username or password. 2');
           return cb(null, false, {message: 'Incorrect username or password.'});
         }
-        console.log("[Auth] LocalStrategy(): Found user/password: ", row);
+        console.log('Success: ', row);
         return cb(null, row);
       });
     })
     .catch((e) => {
+      console.log('Error: ', e);
       return cb(e);
     });
 
@@ -653,32 +662,81 @@ router.get('/login', function (req, res, next) {
  * When authentication fails, the user will be re-prompted to login and shown
  * a message informing them of what went wrong.
  */
-router.post('/login/password', (req, res, next) => {
-    console.log("[Auth] POST/login/password:  req.session = ", req.session);
-    console.log("[Auth] POST/login/password:  req.session.passport = ", req.session.passport);
+// router.post('/login/password', (req, res, next) => {
 
-    // TODO: Get user object into cookie
-    // res.cookie('X-USER', req.session.passport?.user?.id);
+router.use(express.json());
 
-    next();
-  },
-  // Session is created in the next step.
-  passport.authenticate('local', AUTH_OPTIONS
-  //   , // Callback from local authentication...
-  //   (userObj, password, verified) => {
-  //   console.log("Session authenticated: userObj = ", userObj, " verified = ", verified, " password = ", password);
-  //
-  //   // next();
-  //   return next();
-  // }
-  ),
+
+router.post('/login', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    console.log("[AuthRouter] POST/auth/login:  req.session = ", req.session);
+
+
+    // Session is created in the next step.
+    // Call this directly (instead of middleware, to pass in req, res and next objects.
+    // Callback gets...
+    // error: message (err) and code (i.e. 400)
+    // success: null (err) and returned user object
+    passport.authenticate('local', AUTH_OPTIONS, (err, user, errDetails) => {
+      // Callback
+      console.log("Local authentication results: error = ", err, " user = ", user, " errDetails = ", errDetails);
+
+      // TODO: Get user object into cookie
+      // res.cookie('X-USER', req.session.passport?.user?.id);
+
+      if (err) {
+        // Error while comparing/hashing password
+        res.status(406);
+        return res.end(JSON.stringify(new ErrorResponse("Server Error", "1", errDetails?.message, [])));
+      } else if (!user) {
+        // Incorrect username or password
+        res.status(200);
+        return res.end(JSON.stringify(new ErrorResponse("Error", "1", errDetails?.message, [])));
+      }
+
+      // return res.redirect( "/login" )
+
+      console.log("[AuthRouter] Calling req.login()...");
+      req.logIn(user, {}, (err) => {
+        console.log("[AuthRouter] req.login() callback(", user, ",", err, ")...");
+        if (err) {
+          // Express login fail
+          res.status(500);
+          return res.end(JSON.stringify(new ErrorResponse("Server Error", "1", err, [])));
+        } else {
+          // Express login success
+          console.log("[AuthRouter] req.session?.passport?.user = ", req.session?.passport?.user);
+          userIdCookie(req, res); // Don't include a next() function to call since we're handling the send here.
+          res.status(200);
+          return res.end(JSON.stringify(user?.json_data));
+        }
+      })
+    })(req, res, next);
+  }
+  /*,
   // The next step will only be called if the previous authentication step fails.
   (req, res, next) => {
     console.log("[Auth] req.user = ", req.user);
     console.log("req.sessions = ", req.session);
-    return res.redirect(req?.session?.returnTo || '/');
-  });
 
+    // res.json({msg: "Error authenticating"});
+    next();
+
+    // if (process.env['SERVER_SIDE_AUTH']?.toLowerCase() === "true") {
+    // return res.redirect(req?.session?.returnTo || '/');
+    // } else {
+    //   res.send();
+    // }
+  }*/
+);
+
+// app.get('/protected', function(req, res, next) {
+//   passport.authenticate('local', function(err, user, profile) {
+//     if (err) { return next(err) }
+//     if (!user) { return res.redirect('/signin') }
+//     res.redirect('/account');
+//   })(req, res, next);
+// });
 /* GET /signup
  *
  * This route prompts the user to sign up.
@@ -703,38 +761,12 @@ router.post('/login/password', (req, res, next) => {
  * successfully created, the user is logged in.
  */
 router.post('/signup', newUserValidation, async function (req, res, next) {
-  //
-  //   // TODO: Validate email address and username format
-  //
-  //   // Validate email address and username uniqueness
-  //   const isUnique = await knexInstance(USERS_TABLE)
-  //     .select('*')
-  //     .where({"username": req.body.username})
-  //     .orWhere({"email": req.body.email})
-  //     .then((result) => {
-  //       console.log("result = ", result);
-  //       if (result.length > 0) {
-  //         let msg = "";
-  //         let errCnt = 0;
-  //         if (result.username === req.body.username) {
-  //           msg += 'Username already exists. Please select another username.'
-  //           errCnt++;
-  //         }
-  //         if (result.email === req.body.email) {
-  //           msg += 'Email address already exists. Please select another username.'
-  //           errCnt++;
-  //         }
-  //
-  //         if (errCnt >= 2) {
-  //           msg += 'Need to reset your password?'
-  //         }
-  //         // TODO: Add the message to the res.locals.messages array instead of updating the response body... we want to stay on the page.
-  //         console.log(msg);
-  //         return res.send(msg);
-  //       }
-  //     });
-  //
-  console.log("PASSED New User Validation");
+  // console.log("[AuthRouter] PASSED New User Validation. Error messages: ", res.locals.messages);
+
+  if (res.locals.messages.length > 0) {
+    res.status(406);
+    return res.end(JSON.stringify(new ErrorResponse("Error", "1", "Username and/or email already exist.", res.locals.messages)));
+  }
 
   const salt = crypto.randomBytes(16);
   crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256', async function (err, hashedPassword) {
@@ -769,14 +801,26 @@ router.post('/signup', newUserValidation, async function (req, res, next) {
         };
         req.login(user, function (err) {
           if (err) {
-            return next(err);
+            // Express login fail
+            logger.error(err);
+            res.status(500);
+            return res.end(JSON.stringify(new ErrorResponse("Server Error", "1", err, [])));
+            // return next(err);
           }
-          res.redirect('/');
+          // Success
+          userIdCookie(req, res);
+          res.status(200);
+          return res.end(JSON.stringify(user));
+          // res.redirect('/');
         });
       })
-      .catch((e) => {
-        console.log(e);
-        return next(e);
+      .catch((err) => {
+        // Error writing to database
+        console.log(err);
+        logger.error(err);
+        res.status(500);
+        return res.end(JSON.stringify(new ErrorResponse("Server Error", "1", err, [])));
+        // return next(e);
       });
   });
 });
@@ -890,7 +934,7 @@ router.post('/forgot', async function (req, res) {
         msg = 'There was an error sending an email to ' + user.email + '. Might want to try again.';
       } else {
         console.log('Email sent: ' + info.response);
-        msg = `An email has been sent ${email === user.email ? "to '"+email+"' " : ""}with further instructions.`;
+        msg = `An email has been sent ${email === user.email ? "to '" + email + "' " : ""}with further instructions.`;
       }
       res.send(msg);
 
@@ -1138,6 +1182,32 @@ router.post('/changePassword', async function (req, res) {
   return res.send(msg);
 })
 
+
+// TODO: Roles and Permissions
+
+/*******************************************************
+ * User roles and permissions.
+ *
+ *   Requires that the user is authenticated.
+ *******************************************************/
+router.get('/userPermissions', AuthService.hasPriv, function (req, res) {
+  // console.log("[Auth] GET/userPermissions: user = ", req.user);
+  const userId = req.user?.id;
+
+  AuthService.getUserPermissions(userId).then((result) => {
+    res.status(200);
+    return res.end(result);
+  }).catch((msg) => {
+    logger.info(msg);
+    res.status(406);
+    return res.end(JSON.stringify(new ErrorResponse("Invalid Request", "1", msg, [])));
+  })
+});
+
+
+
+
+
 /* GET /login/federated/accounts.google.com
  *
  * This route redirects the user to Google, where they will authenticate.
@@ -1289,10 +1359,23 @@ router.post('/oauth2/redirect/apple', passport.authenticate('apple', {
 router.post('/logout', function (req, res, next) {
   // console.log("[AuthRouter] POST/logout(): req = ", req);
   req.logout(function (err) {
+    console.log("[AuthRouter] /logout: req.logout() result = ", err);
     if (err) {
-      return next(err);
+      // Express logout fail
+      res.status(500);
+      return res.end(JSON.stringify(new ErrorResponse("Server Error", "1", err, [])));
+      // return next(err);
     }
-    res.redirect('/login');
+    // if (process.env['SERVER_SIDE_AUTH']?.toLowerCase() === "true") {
+    //   res.redirect('/auth/login');
+    // } else {
+    //   next();
+    // }
+
+
+    res.status(200);
+    return res.end();
+
   });
 });
 
@@ -1302,11 +1385,16 @@ router.post('/logout', function (req, res, next) {
  * This route logs the user out.
  */
 router.get('/logout', function (req, res, next) {
+  console.log("[AuthRouter] GET/logout(): req = ", req);
   req.logout(function (err) {
     if (err) {
       return next(err);
     }
-    res.redirect('/login');
+    if (process.env['SERVER_SIDE_AUTH']?.toLowerCase() === "true") {
+      res.redirect('/auth/login');
+    } else {
+      next();
+    }
   });
 });
 

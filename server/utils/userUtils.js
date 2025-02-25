@@ -27,7 +27,7 @@ const createProfile = (tempProfile = {}) => {
   // TODO: 2. Merge any new props/values into existing profile
   // TODO: 3. Save the new props/values with the previous ones
 
-  return IoService.insertUpdate(tempProfile, "profiles");
+  return IoService.insertUpdate(tempProfile, "profiles", tempProfile.userId);
 }
 
 /*************************************************************

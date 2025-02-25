@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 // var ensureLogIn = require('connect-ensure-login').ensureLoggedIn;
-const ensureLogIn = require('./routerUtils');
+const ensureLogIn = require('./routerUtils').ensureLogIn;
 const UUID = require("uuid");
 // const IoService = require("../server/services/io/ioService");
 const MediaService = require("../server/services/media/MediaService");

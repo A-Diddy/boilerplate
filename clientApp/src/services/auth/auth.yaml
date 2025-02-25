@@ -1,0 +1,1428 @@
+openapi: 3.0.3
+info:
+  title: Auth Service
+  description: Authentication and authorization endpoints
+  termsOfService: https://www.ExampleBoilerplate.com/terms-conditions
+  contact:
+    email: boilerplate@stusys.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+  - url: https://ExampleBoilerplate.com/
+tags:
+  - name: ExampleBoilerplate.com
+    description: Authentication and authorization endpoints
+    externalDocs:
+      description: Find out more
+      url: https://ExampleBoilerplate.com
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate with username and password
+      operationId: login
+      description: Send either username or email along with a password to attempt authentication.
+      tags:
+        - auth
+      requestBody:
+        description: Auth credentials as application/x-www-form-urlencoded data
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/signup:
+    post:
+      operationId: signup
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      summary: Create a new user
+      description: Create a new user
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/email_verify:
+    post:
+      operationId: verifyEmail
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerifyRequest'
+      summary: Use link (path + token) from email to verify
+      description: Retrieves a verify email token from the request and sets 'email_verified' to true.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailVerifyResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/forgot_password/send:
+    post:
+      operationId: sendForgotPassword
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendForgotPasswordRequest'
+      summary: Request to email a user with a link to reset their password
+      description: Request to email a user with a link to reset their password
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendForgotPasswordResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/forgot_password/reset:
+    post:
+      operationId: resetForgotPassword
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      summary: Reset Password
+      description: Reset Password
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetPasswordResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/permissions:
+    get:
+      operationId: getPermissions
+      tags:
+        - auth
+      summary: Get User's Permissions
+      description: Get User's Permissions
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPermissionResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/session:
+    post:
+      operationId: updateSession
+      tags:
+        - auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthSessionRequest'
+      summary: Refresh JWT Session and Optional switch active client
+      description: Refresh JWT Session and Optional switch active client
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /api/departments:
+    post:
+      operationId: createDepartment
+      tags:
+        - department
+      summary: Create a new Department
+      description: Create a new Department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Department'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: listDepartments
+      tags:
+        - department
+      summary: List Departments
+      description: List Departments
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+        - in: query
+          name: client_id
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDepartmentResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/staff:
+    get:
+      operationId: listClientStaff
+      tags:
+        - staff
+      summary: List Client Staff
+      description: List Client Staff
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+        - in: query
+          name: client_id
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListStaffResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/purchase_orders:
+    post:
+      operationId: createPurchaseOrder
+      tags:
+        - purchase_order
+      summary: Create a new PurchaseOrder
+      description: Create a new PurchaseOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrder'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrder'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: listPurchaseOrders
+      tags:
+        - purchase_order
+      summary: List PurchaseOrders
+      description: List PurchaseOrders
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+        - in: query
+          name: client_id
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPurchaseOrderResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/purchase_orders/{id}:
+    post:
+      operationId: updatePurchaseOrder
+      tags:
+        - purchase_order
+      summary: Update a PurchaseOrder
+      description: Update a PurchaseOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrder'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrder'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/positions:
+    post:
+      operationId: createPosition
+      tags:
+        - position
+      summary: Create a new Position
+      description: Create a new Position
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Position'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Position'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: listPositions
+      tags:
+        - position
+      summary: List Positions
+      description: List Positions
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+        - in: query
+          name: client_id
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPositionResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/requisition_types:
+    get:
+      operationId: listRequisitionTypes
+      tags:
+        - requisition_type
+      summary: List RequisitionTypes
+      description: List RequisitionTypes
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListRequisitionTypeResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/pay_schemes:
+    get:
+      operationId: listPaySchemes
+      tags:
+        - pay_scheme
+      summary: List PaySchemes
+      description: List PaySchemes
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPaySchemeResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/schedules:
+    post:
+      operationId: createSchedule
+      tags:
+        - schedule
+      summary: Create a new Schedule
+      description: Create a new Schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: listSchedules
+      tags:
+        - schedule
+      summary: List Schedules
+      description: List Schedules
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+        - in: query
+          name: client_id
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListScheduleResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/available_workers:
+    get:
+      operationId: listAvailableWorkers
+      tags:
+        - worker
+      summary: List Available Workers
+      description: List workers available to the client. These will be any worker
+        assigned or presented to any of the client's existing requisitions.
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+        - in: query
+          name: client_id
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListWorkerResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/worker_environments:
+    post:
+      operationId: createWorkerEnvironment
+      tags:
+        - worker_environment
+      summary: Create a new Worker Environment
+      description: Create a new Worker Environment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkerEnvironment1'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerEnvironment1'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: listWorkerEnvironments
+      tags:
+        - worker_environment
+      summary: List Worker Environments
+      description: List Worker Environments
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListWorkerEnvironmentResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/worksites:
+    post:
+      operationId: createWorksite
+      tags:
+        - worksite
+      summary: Create a new Worksite
+      description: Create a new Worksite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Worksite'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worksite'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: listWorksites
+      tags:
+        - worksite
+      summary: List Worksites
+      description: List Worksites
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListWorksiteResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/requisitions:
+    post:
+      operationId: createRequisition
+      tags:
+        - requisition
+      summary: Create a New Requisition
+      description: Create a New Requisition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Requisition'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Requisition'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: listRequisitions
+      tags:
+        - requisition
+      summary: List Requisitions
+      description: List Requisitions
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            default: 25
+        - in: query
+          name: client_id
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListRequisitionResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/requisitions/{id}:
+    get:
+      operationId: getRequisitionDetail
+      tags:
+        - requisition
+      summary: Get Requisition Detail
+      description: Get Requisition Detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Requisition'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      operationId: deleteRequisition
+      tags:
+        - purchase_order
+      summary: Delete a Requisition
+      description: Delete a Requisition
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    GenericRequest:
+      type: object
+      properties: {}
+      additionalProperties: true
+    GenericResponse:
+      type: object
+      properties: {}
+    LoginRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+      required:
+        - username
+        - password
+    LoginResponse:
+      type: object
+      properties: {}
+    ErrorResponse:
+      type: object
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        code:
+          type: integer
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+        - code
+        - name
+    SignupRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          minLength: 1
+      required:
+        - email
+        - username
+        - password
+    SignupResponse:
+      type: object
+      properties: {}
+    EmailVerifyRequest:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+    EmailVerifyResponse:
+      type: object
+      properties: {}
+    SendForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+    SendForgotPasswordResponse:
+      type: object
+      properties: {}
+    ResetPasswordRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        token:
+          type: string
+      required:
+        - password
+        - token
+    ResetPasswordResponse:
+      type: object
+      properties: {}
+    Permission:
+      type: object
+      properties:
+        entity:
+          type: string
+        name:
+          type: string
+        field:
+          type: string
+        action:
+          type: string
+    GetPermissionResponse:
+      type: object
+      properties:
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
+        role:
+          type: string
+    AuthSessionRequest:
+      type: object
+      properties:
+        client_id:
+          type: integer
+    AuthSessionResponse:
+      type: object
+      properties: {}
+    Department:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+        client_id:
+          type: integer
+      required:
+        - name
+    Pagination:
+      type: object
+      properties:
+        total_pages:
+          type: integer
+        page_size:
+          type: integer
+          default: 25
+        page:
+          type: integer
+          default: 1
+    ListDepartmentResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Department'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    Role:
+      type: object
+      properties:
+        name:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+    Staff:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+        user:
+          $ref: '#/components/schemas/User'
+    ListStaffResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Staff'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    Department1:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+      required:
+        - name
+    PurchaseOrder:
+      type: object
+      properties:
+        client_id:
+          type: integer
+        ext_ref:
+          type: string
+        id:
+          type: integer
+          readOnly: true
+        departments:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Department1'
+        department_ids:
+          type: array
+          writeOnly: true
+          items:
+            type: integer
+      required:
+        - ext_ref
+    ListPurchaseOrderResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrder'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    WorkerEnvironment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - description
+        - name
+    Position:
+      type: object
+      properties:
+        department_id:
+          type: integer
+          writeOnly: true
+        client_id:
+          type: integer
+        id:
+          type: integer
+          readOnly: true
+        job_description:
+          type: string
+        worker_environment_id:
+          type: integer
+          writeOnly: true
+        department:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/Department1'
+        worker_environment:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/WorkerEnvironment'
+        title:
+          type: string
+      required:
+        - department_id
+        - job_description
+        - title
+        - worker_environment_id
+    ListPositionResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Position'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    RequisitionType:
+      type: object
+      properties:
+        id:
+          type: integer
+        display_name:
+          type: string
+        name:
+          type: string
+    ListRequisitionTypeResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequisitionType'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    PayScheme:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        display_name:
+          type: string
+        name:
+          type: string
+    ListPaySchemeResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayScheme'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+        client_id:
+          type: integer
+        description:
+          type: string
+      required:
+        - description
+        - name
+    ListScheduleResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Schedule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    Worker:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          $ref: '#/components/schemas/User'
+    ListWorkerResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Worker'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    WorkerEnvironment1:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+        client_id:
+          type: integer
+        description:
+          type: string
+      required:
+        - description
+        - name
+    ListWorkerEnvironmentResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkerEnvironment1'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    Worksite:
+      type: object
+      properties:
+        country:
+          type: string
+        name:
+          type: string
+        client_id:
+          type: integer
+        description:
+          type: string
+        id:
+          type: integer
+          readOnly: true
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+      required:
+        - city
+        - country
+        - description
+        - name
+        - state
+        - street
+        - zip
+    ListWorksiteResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Worksite'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    User1:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+    Requisition:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        client_id:
+          type: integer
+        purchase_order_id:
+          type: integer
+          writeOnly: true
+        position_id:
+          type: integer
+          writeOnly: true
+        department_id:
+          type: integer
+          writeOnly: true
+        supervisor_user_id:
+          type: integer
+          writeOnly: true
+        timecard_approver_user_id:
+          type: integer
+          writeOnly: true
+        worksite_id:
+          type: integer
+          writeOnly: true
+        requisition_type_id:
+          type: integer
+          writeOnly: true
+        pay_scheme_id:
+          type: integer
+          writeOnly: true
+        schedule_id:
+          type: integer
+          writeOnly: true
+        present_worker_ids:
+          type: array
+          writeOnly: true
+          items:
+            type: integer
+        num_assignments:
+          type: integer
+        pay_rate:
+          type: number
+        start_date:
+          type: string
+          format: date
+        estimated_end_date:
+          type: string
+          format: date
+        additional_information:
+          type: object
+        employee_info:
+          type: object
+        purchase_order:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/PurchaseOrder'
+        position:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/Position'
+        department:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/Department'
+        supervisor:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/User1'
+        timecard_approver:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/User1'
+        worksite:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/Worksite'
+        requisition_type:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/RequisitionType'
+        pay_scheme:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/PayScheme'
+        schedule:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/Schedule'
+        presented_workers:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Worker'
+        assigned_workers:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/Worker'
+      required:
+        - department_id
+        - estimated_end_date
+        - num_assignments
+        - pay_rate
+        - pay_scheme_id
+        - position_id
+        - requisition_type_id
+        - schedule_id
+        - start_date
+        - worksite_id
+    ListRequisitionResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Requisition'
+    EmptyResponse:
+      type: object
+      properties: {}

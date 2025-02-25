@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config({ path:  `.env.${process.env.NODE_ENV}` });
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -12,7 +12,8 @@ const logger = require('morgan');
 const fileLogger = require("./server/utils/logger");
 const {cors, csrfCookie, userIdCookie} = require('./server/utils/corsUtils');
 const indexRouter = require('./routes/index');
-const authRouter = require('./routes/auth');
+const authRouter_Local = require('./routes/auth');
+const authRouter = require('./routes/authRouter');
 const ioRouter = require('./routes/ioRouter');
 const queryRouter = require('./routes/queryRouter');
 const mediaRouter = require('./routes/mediaRouter');
@@ -49,31 +50,48 @@ app.use(express.static(path.join(__dirname, 'public')));  // Static assets from 
 // app.use(csrfCookie);   // Adds csrf token to header
 
 // Create auth 'sessions' database connection
+// See https://expressjs.com/en/resources/middleware/session.html
 app.use(session({
-  secret: process.env.DB_SESSIONS_SECRET,
+  secret: process.env["SESSION_SECRET"],
   resave: false,            // Don't save session if unmodified
   saveUninitialized: false, // Don't create session until something stored.
   store: new pgSessionStore({pool : pgPool, tableName : 'sessions'})
 }));
+
+/*console.log("Creating session with config: ", process.env.SESSION_SECRET, process.env['SESSION_ROLLING'], process.env['SESSION_MAXAGE_TIMEOUT'], parseInt( process.env['SESSION_MAXAGE_TIMEOUT'], 10), process.env['SESSION_SAMESITE']);
+// console.log("JSON.parse(process.env['SESSION_ROLLING']): ", JSON.parse(process.env['SESSION_ROLLING']));
+app.use(session({
+  secret: process.env.SESSION_SECRET,   // [Required] Key used to sign session ID cookie
+  resave: false,            // Don't save session if unmodified
+  saveUninitialized: false, // Don't create session until something stored.
+  store: new pgSessionStore({pool : pgPool, tableName : 'sessions'}),
+  rolling: JSON.parse(process.env['SESSION_ROLLING']) ?? true,
+  cookie: {
+    maxAge: parseInt(process.env['SESSION_MAXAGE_TIMEOUT'], 10) || null,
+    sameSite: JSON.parse(process.env['SESSION_SAMESITE']) ?? true,
+  }
+}));*/
 
 // app.use(userIdCookie);    // Puts user details (id) into a cookie
 
 // const csrfProtect = csrf({cookie: true})
 
 // Enforce CSRF tokens with each POST request
-app.use(
-  // (req, res, next) => {
-  //   console.log("CSRF Token validation... cookies = ", req.cookies);
-  //   next();
-  // },
-  csrf()
+if (process.env.BYPASS_CSRF_TOKEN !== "true") {
+  app.use(
+    // (req, res, next) => {
+    //   console.log("CSRF Token validation... cookies = ", req.cookies);
+    //   next();
+    // },
+    csrf()
 //   ,
 //   (req, res, next) => {
 //   console.log("csrf result errors? = ", res.error);
 //   console.log("csrf result: cookies = ", req.cookies);
 //   next();
 // }
-);
+  );
+}
 
 app.use(userIdCookie);    // Puts user details (id) into a cookie
 
@@ -82,7 +100,6 @@ app.use(userIdCookie);    // Puts user details (id) into a cookie
 // if (process.env.TESTMODE === "true") {
   app.use(cors);
 // }
-
 
 // Authenticate session with each reqeust
 app.use(passport.authenticate('session'));
@@ -105,12 +122,17 @@ app.use(function(req, res, next) {
  *               rendered outside the server (i.e. SPAs
  *               served separately).
  ****************************************************/
+// TODO: Move this to a utils (corsUtils or a new sessionUtils?)
 app.use(function(req, res, next) {
   // Add the CSRF token to locals so it can be used in the SSR templates.
-  res.locals.csrfToken = req.csrfToken();
+  if (process.env.BYPASS_CSRF_TOKEN !== "true") {
+    res.locals.csrfToken = req.csrfToken() ?? "TEST MODE";
+  }
 
+  console.log("[App] Adding session details to cookie: ", req.session);
   // Add the CSRF token to a cookie so the app can be served separately (dev server)
   res.cookie('XSRF-TOKEN', res.locals.csrfToken);
+
   next();
 });
 
@@ -126,7 +148,8 @@ app.use((req, res, next) => {
  * Service routes
  *******************************************************/
 app.use('/', indexRouter);    // Client app
-app.use('/', authRouter);     // Sign up, sign in, sign out, OAuth
+app.use('/', authRouter_Local);     // Sign up, sign in, sign out, OAuth
+app.use('/auth', authRouter); // Sign up, sign in, sign out, OAuth
 app.use('/io', ioRouter);     // Data Retrieval and Updates (by index and uuid)
 app.use('/q', queryRouter);   // Data Queries
 app.use('/m', mediaRouter);   // Media Retrieval and Updates

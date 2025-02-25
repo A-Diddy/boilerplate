@@ -25,6 +25,7 @@
                 <% }); %>
             </section>
         <% } %>
+        <!--<form action="/auth/login" method="post">-->
         <form action="/login/password" method="post">
             <section>
                 <label for="username">Username</label>
@@ -34,7 +35,7 @@
                 <label for="current-password">Password</label>
                 <input id="current-password" name="password" type="password" autocomplete="current-password" required>
             </section>
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : "NOT USED" %>">
             <button type="submit">Sign in</button>
         </form>
         <hr>

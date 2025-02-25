@@ -4,7 +4,7 @@ info:
   description: Data persistence... create, retrieve, updated and delete records.
   termsOfService: https://www.ExampleBoilerplate.com/terms-conditions
   contact:
-    email: astuart@reachtalent.com
+    email: boilerplate@stusys.com
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html

@@ -1,17 +1,34 @@
 let ensureLogIn = require('connect-ensure-login').ensureLoggedIn;
 
-getLogInFunc = () => {
+getLogInFunc = (req, res, next) => {
+  console.log("[routerUtils] getLogInFunc(): BYPASS_AUTH = ", process.env.BYPASS_AUTH, " & process.env.NODE_ENV = ", process.env.NODE_ENV);
+  console.log("NODE_ENV = ", process.env.NODE_ENV);
   if (process.env.BYPASS_AUTH === "true") {
     return () => {
       return function (req, res, next) {
         next();
       }
     }
+  } else if (process.env.SERVER_SIDE_AUTH !== "true") {
+    return () => {
+      return function (req, res, next) {
+        if (!req.isAuthenticated || !req.isAuthenticated()) {
+          const errorResponse = {
+            status: 403,
+            msgCode: "FORBIDDEN",
+            message: "You must be signed in to access this resource."
+          };
+          res.send(errorResponse);
+          return;
+        }
+        next();
+      }
+    }
   } else {
+    console.log("Verifying authentication")
     return ensureLogIn;
   }
 }
-
 
 const setTestUser = (req, res, next) => {
   console.log("setTestUser()");
@@ -49,7 +66,19 @@ const checkUser = (req, res, next) => {
   }
 }
 
+class ErrorResponse {
+  constructor(name, code, description, errors) {
+    this.name = name ?? "";
+    this.code = code ?? "";
+    this.description = description ?? "";
+    this.errors = errors || [];
+  }
+}
 
 // TODO: Export additional methods
-module.exports = getLogInFunc();
+module.exports = {
+  ensureLogIn: getLogInFunc(),
+  getLogInFunc: getLogInFunc(),
+  ErrorResponse: ErrorResponse
+}
 

@@ -71,9 +71,9 @@ exports.createWorkflow = async (req, res, next) => {
   json_data.status = "invited";
   json_data.userId = userId;
 
-  const workflowId = await IoService.insertUpdate(json_data, index).then((result) => {
+  const workflowId = await IoService.insertUpdate(json_data, index, userId).then((result) => {
     // console.log("Created workflow result: ", result);
-    return result[0].id;
+    return result.id;
   }).catch((e) => {
     console.log(e);
     return e;

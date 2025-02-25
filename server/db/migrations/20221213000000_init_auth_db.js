@@ -1,4 +1,5 @@
-const onUpdateTables = ["users", "tokens"]
+// Tables to get the onUpdate trigger function to set the 'updated_at' column.
+const onUpdateTables = ["users", "tokens", "permissions", "roles"];
 
 exports.up = (knex) => {
   const promises = [];
@@ -9,13 +10,17 @@ exports.up = (knex) => {
   promises.push(
     knex.schema.createTable("users", (table) => {
       table.uuid("id", {primaryKey: true});
+      table.text("index");
       table.text("username").unique();
+      table.text("name");
       table.string("email", 255).unique();
+      table.boolean("email_verified").defaultTo(false);
+      table.string("public_key").unique();
       table.binary("hashed_password");
       table.binary("salt");
-      table.text("name");
-      table.jsonb("json_data").notNullable();
-      table.boolean("email_verified").defaultTo(true);
+      table.jsonb("json_data").notNullable().defaultTo({});
+      table.text("created_by");                 // User
+      table.text("owned_by");                   // User, role, group, etc.
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.timestamp('updated_at').defaultTo(knex.fn.now());
 
@@ -28,10 +33,15 @@ exports.up = (knex) => {
   promises.push(
     knex.schema.createTable("federated_credentials", (table) => {
       table.increments("id").primary();
+      table.text("index");
       table.uuid("user_id").notNullable();
       table.text("provider").notNullable();
       table.text("subject").notNullable();
-      table.jsonb("json_data").notNullable();
+      table.jsonb("json_data").notNullable().defaultTo({});
+      table.text("created_by");                 // User
+      table.text("owned_by");                   // User, role, group, etc.
+      table.timestamp('created_at').defaultTo(knex.fn.now());
+      table.timestamp('updated_at').defaultTo(knex.fn.now());
 
       table.unique(["provider", "subject"]);
       table.index(["json_data"], null, "GIN");
@@ -42,9 +52,14 @@ exports.up = (knex) => {
   promises.push(
     knex.schema.createTable("sessions", (table) => {
       table.string("sid").primary();
+      table.text("index");
       table.json("sess").notNullable();
       table.timestamp('expire').notNullable();
+      table.jsonb("json_data").notNullable().defaultTo({});
+      table.text("created_by");                 // User
+      table.text("owned_by");                   // User, role, group, etc.
       table.timestamp('created_at').defaultTo(knex.fn.now());
+      table.timestamp('updated_at').defaultTo(knex.fn.now());
 
       table.index("expire", "IDX_session_expire");
     })
@@ -54,17 +69,63 @@ exports.up = (knex) => {
   promises.push(
     knex.schema.createTable("tokens", (table) => {
       table.increments("id").primary();
+      table.text("index");
       table.text("entity");
       table.uuid("user_id").notNullable();
       table.string("token", 255);
       table.integer('expire_in');
       table.jsonb("json_data").notNullable().defaultTo({});
+      table.text("created_by");                 // User
+      table.text("owned_by");                   // User, role, group, etc.
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.timestamp('updated_at').defaultTo(knex.fn.now());
 
       table.index(["token"]);
       table.index(["user_id"]);
       table.index(["json_data"], null, "GIN");
+    })
+  )
+
+  // PERMISSIONS Table: Defines privileges per index, role and/or user
+  promises.push(
+    knex.schema.createTable("permissions", (table) => {
+      table.uuid("id", {primaryKey: true});
+      table.text("index");
+      table.uuid("user_id").nullable();
+      table.text("role");
+      table.text("permission");
+      table.jsonb("json_data").notNullable().defaultTo({});
+      table.text("created_by");                 // User
+      table.text("owned_by");                   // User, role, group, etc.
+      table.timestamp('created_at').defaultTo(knex.fn.now());
+      table.timestamp('updated_at').defaultTo(knex.fn.now());
+
+      table.index(["id"]);
+      table.index(["id", "index"]);
+      table.index(["json_data"], null, "GIN");
+
+      table.foreign('user_id').references('users.id');
+    })
+  )
+
+  // ROLES Table: Links users to roles (many to many)
+  promises.push(
+    knex.schema.createTable("roles", (table) => {
+      table.uuid("id", {primaryKey: true});
+      table.text("index");
+      table.uuid("user_id").nullable();    // Foreign key
+      table.text("role");
+      table.jsonb("json_data").notNullable().defaultTo({});
+      table.text("created_by");                 // User
+      table.text("owned_by");                   // User, role, group, etc.
+      table.timestamp('created_at').defaultTo(knex.fn.now());
+      table.timestamp('updated_at').defaultTo(knex.fn.now());
+
+      table.index(["id"]);
+      table.index(["id", "index"]);
+      table.index(["json_data"], null, "GIN");
+
+      table.foreign('user_id').references('users.id');
     })
   )
 
@@ -104,6 +165,9 @@ exports.down = function (knex) {
   )
   promises.push(
     knex.schema.dropTableIfExists("tokens")
+  )
+  promises.push(
+    knex.schema.dropTableIfExists("permissions")
   )
 
   promises.push(

@@ -1,0 +1,36 @@
+{
+  "io": {
+    "get": {
+      "users": {
+        "isAuthenticated": true,
+        "hasPriv": "read",
+        "hasRole": "sysadmin",
+        "isCreator": true,
+        "isOwner": true
+      },
+      "profiles": {
+        "isAuthenticated": true,
+        "hasPriv": "read",
+        "hasRole": "sysadmin",
+        "isCreator": true,
+        "isOwner": true
+      }
+    },
+    "post": {
+      "users": {
+        "isAuthenticated": true,
+        "hasPriv": "write",
+        "hasRole": "sysadmin",
+        "isCreator": true,
+        "isOwner": true
+      },
+      "profiles": {
+        "isAuthenticated": true,
+        "hasPriv": "write",
+        "hasRole": "sysadmin",
+        "isCreator": true,
+        "isOwner": true
+      }
+    }
+  }
+}

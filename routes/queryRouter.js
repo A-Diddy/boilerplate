@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 // const ensureLogIn = require('connect-ensure-login').ensureLoggedIn;
-const ensureLogIn = require('./routerUtils');
+const ensureLogIn = require('./routerUtils').ensureLogIn;
 const QueryService = require("../server/services/query/QueryService");
 
 const router = express.Router();

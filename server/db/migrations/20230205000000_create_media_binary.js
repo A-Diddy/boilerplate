@@ -7,16 +7,22 @@ exports.up = (knex) => {
     promises.push(
       knex.schema.createTable(tableName, (table) => {
         table.uuid("id", {primaryKey: true});
+        table.text("index");
         table.text("og_filename");
         table.text("media_type");
         table.text("encoding");
         table.integer("size");
         table.timestamp('last_modified');
         table.boolean("use_hash").defaultTo(true);
-        table.jsonb("json_data").notNullable().defaultTo({});
         table.binary("binary_data").notNullable();
+        table.jsonb("json_data").notNullable().defaultTo({});
+        table.text("created_by");                 // User
+        table.text("owned_by");                   // User, role, group, etc.
         table.timestamp('created_at').defaultTo(knex.fn.now());
         table.timestamp('updated_at').defaultTo(knex.fn.now());
+
+        table.index(["id"]);
+        table.index(["json_data"], null, "GIN");
       })
     )
 

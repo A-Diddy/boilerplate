@@ -4,11 +4,14 @@ const express = require('express');
 const IoService = require("../server/services/io/ioService");
 const WorkflowService = require("../server/services/workflow/workflowService");
 const GigService = require("../server/services/gig/gigService");
+const UUID = require("uuid");
+
 // const cors = require("cors");
 
 // const ensureLogIn = require('connect-ensure-login').ensureLoggedIn;
-const ensureLogIn = require('./routerUtils');
+const ensureLogIn = require('./routerUtils').ensureLogIn;
 const logger = require("../server/utils/logger");
+const AuthService = require("../server/services/auth/authService");
 
 const router = express.Router();
 const ensureLoggedIn = ensureLogIn({redirectTo: '/login', returnTo: '/io'});
@@ -82,7 +85,7 @@ router.use(
     // Pass to next layer of middleware
     next();
   },
-  ensureLoggedIn,
+  ensureLoggedIn,     // SERVER_SIDE_AUTH=true: Redirects for local auth. Otherwise, returns JSON response
   getPrivs
 );
 
@@ -143,7 +146,6 @@ const validateData = (req, res, next) => {
   next();
 }
 
-
 // router.options('/', cors());
 
 /******************************************************
@@ -152,7 +154,7 @@ const validateData = (req, res, next) => {
  *
  *   Example: host:port/io/users/123e4567-e89b-12d3-a456-426614174000
  ******************************************************/
-router.get('/:index/:id', validateData, (req, res, next) => {
+router.get('/:index/:id', validateData, AuthService.hasPriv, (req, res, next) => {
   // FUTURE_ENHANCEMENT: Privilege Authorization
   IoService.getById(req.params?.index, req.params?.id).then((result) => {
     res.send(result);
@@ -168,7 +170,7 @@ router.get('/:index/:id', validateData, (req, res, next) => {
  *
  *   Example: host:port/io?index=users&id=123e4567-e89b-12d3-a456-426614174000
  ******************************************************/
-router.get('/', (req, res, next) => {
+router.get('/', AuthService.hasPriv, (req, res, next) => {
   // TODO: Consolidate this convenience route with the one above
   // FUTURE_ENHANCEMENT: Privilege Authorization
   IoService.getById(req.query?.index, req.query?.id).then((result) => {
@@ -184,35 +186,21 @@ router.get('/', (req, res, next) => {
  *
  * ******************************************************/
 router.post('/',
+  // --------------- CUSTOM OBJECT LOGIC -----------------
   WorkflowService.createWorkflow,     // Business Logic: "workflows"
   GigService.createGig,               // Business Logic: "reqs"
+  // -----------------------------------------------------
   function (req, res, next) {
-    if (!req.user) {
-      // This appears to never be called...
-      console.log("REDIRECTING to login: req.session.returnTo = ", req.session.returnTo);
-      return res.render('login', {title: process.env.TITLE});
-    }
-    next();
-  }, function (req, res, next) {
-
-    console.log("/io - GET. User: ", req.user);
-    console.log("/io - GET. Request Contents: ", req.params, req.body, req.query);
+    console.log("/io - POST. Request Contents: ", req.params, req.body, req.query);
 
     try {
       const index = req.query?.index;
       const json_data = req.body;
       delete json_data["_csrf"];
 
-      // Create Onboarding Workflow
-      // if (index === "workflows" && !json_data.id) {
-      //   WorkflowService.createWorkflow()
-      // }
-      //
-
-
       json_data.id = json_data.id || UUID.v4();   // TODO: Call validateData() in processing chain
 
-      IoService.insertUpdate(json_data, index).then((result) => {
+      IoService.insertUpdate(json_data, index, req.user.id).then((result) => {
         res.send(result);
       }).catch((e) => {
         console.log(e);

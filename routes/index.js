@@ -1,6 +1,6 @@
 require('dotenv').config();
 var express = require('express');
-const ensureLogIn = require('./routerUtils');
+const ensureLogIn = require('./routerUtils').ensureLogIn;
 // var ensureLogIn = require('connect-ensure-login').ensureLoggedIn;
 var path = require('path');
 var db = require('../db');
@@ -11,8 +11,6 @@ var router = express.Router();
 var ensureLoggedIn = ensureLogIn();
 
 function fetchTodos(req, res, next) {
-  // console.log("fetchTodos(",{req, res, next},")");
-  console.log("fetchTodos(req.user = ",req.user,")");
   db.all('SELECT * FROM todos WHERE owner_id = ?', [
     req.user.id
   ], function(err, rows) {
@@ -67,14 +65,18 @@ const fetchBaseConfig = (req, res, next) => {
 
 router.use((req, res, next) => {
   // logger.info(`[IndexRouter] ${req.ip} -> ${req.method} ${req.originalUrl}`);
+  console.log(`[IndexRouter] ${req.ip} -> ${req.method} ${req.originalUrl}`);
   next();
 })
 
 /* GET home page. */
 router.get('/',
+  // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // TODO: use routerUtils.checkUser() instead of this.
   // TODO: Enable app access without authentication...
   // TODO: Define which specific routes need authentication instead
+  // TODO: If user is not logged in, no user exists, so we need to ensure a dummy username is available... or the template bombs.
+  // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function(req, res, next) {
   if (!req.user) {
     return res.render('login', {title: process.env.TITLE });
@@ -86,6 +88,11 @@ router.get('/',
   res.locals.filter = null;  // Used in the rendered `index.ejs` template
   res.render(path.join(__dirname, '../clientApp/dist/index'), { user: req.user, title: process.env.TITLE });
 });
+
+
+
+
+/*
 
 router.get('/active', ensureLoggedIn, fetchTodos, function(req, res, next) {
   res.locals.todos = res.locals.todos.filter(function(todo) { return !todo.completed; });
@@ -169,5 +176,6 @@ router.post('/clear-completed', ensureLoggedIn, function(req, res, next) {
     return res.redirect('/' + (req.body.filter || ''));
   });
 });
+*/
 
 module.exports = router;

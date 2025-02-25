@@ -12,3 +12,4 @@ logs/
 # Mac OS X
 .DS_Store
 /.idea/
+/.env.local
