@@ -1,3 +1,42 @@
+![Boilerplate deployment diagram](public/img/logo.png?raw=true "Title")
+
+# Introduction
+
+Boilerplate is for bootstrapping client-server applications.
+
+## The Concept is Simple...
+
+**Deploy Boilerplate to a server, connect a database and focus on building your client app without needing to make frequent server or database schema changes.**
+
+## Security Included
+
+Authentication and configurable authorization tools are built in, helping to ensure security risks are reduced by using industry standard solutions.
+
+## Dynamic and Configurable
+Dynamic APIs dramatically reduce the need to make backend server changes and nearly eliminate any database alterations.
+
+## Client Classes with Type Definition
+Backend API services are provided as client classes with complete type definitions. This means that code help is included and making a call to the backend is as simple as calling one of the methods. For example...
+
+````js
+import {QueryAPI} from "@/services/query";
+const QueryService = new QueryAPI(connectionSettings).query;
+
+const query = {
+   conditions: [{
+      path: "userId",
+      operator: "=",
+      value: "4adb8cdf-3ad6-4da9-a0c5-922471a40224"
+   }]
+}
+
+const queryResults = await QueryService.query(query, "profiles");
+````
+
+## Deployment Diagram
+![Boilerplate deployment diagram](public/img/Diagram.jpg?raw=true "Title")
+
+----
 # Quick Start
 
 0. To run this app, clone the repository and install dependencies:
