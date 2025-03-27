@@ -154,7 +154,7 @@ const validateData = (req, res, next) => {
  *
  *   Example: host:port/io/users/123e4567-e89b-12d3-a456-426614174000
  ******************************************************/
-router.get('/:index/:id', validateData, AuthService.hasPriv, (req, res, next) => {
+router.get('/:index/:id', validateData, AuthService.hasPriv(), (req, res, next) => {
   // FUTURE_ENHANCEMENT: Privilege Authorization
   IoService.getById(req.params?.index, req.params?.id).then((result) => {
     res.send(result);
@@ -170,7 +170,7 @@ router.get('/:index/:id', validateData, AuthService.hasPriv, (req, res, next) =>
  *
  *   Example: host:port/io?index=users&id=123e4567-e89b-12d3-a456-426614174000
  ******************************************************/
-router.get('/', AuthService.hasPriv, (req, res, next) => {
+router.get('/', AuthService.hasPriv(), (req, res, next) => {
   // TODO: Consolidate this convenience route with the one above
   // FUTURE_ENHANCEMENT: Privilege Authorization
   IoService.getById(req.query?.index, req.query?.id).then((result) => {

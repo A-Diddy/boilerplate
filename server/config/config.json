@@ -32,5 +32,12 @@
         "isOwner": true
       }
     }
+  },
+  "default": {
+    "default": {
+      "default": {
+        "hasRole": "defaultSysAdmin"
+      }
+    }
   }
 }

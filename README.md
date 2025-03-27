@@ -15,8 +15,12 @@ Authentication and configurable authorization tools are built in, helping to ens
 ## Dynamic and Configurable
 Dynamic APIs dramatically reduce the need to make backend server changes and nearly eliminate any database alterations.
 
+## Agnostic Client Support
+Server Side Rendering (SSR), Single Page Application (SPA) or a hybrid approach are each supported. Additionally, you can use any JS framework (such as Vue [included], or React). You can even use a non-JS framework like Android or IOS.
+
 ## Client Classes with Type Definition
-Backend API services are provided as client classes with complete type definitions. This means that code help is included and making a call to the backend is as simple as calling one of the methods. For example...
+Backend API services are provided as client classes with complete type definitions. This means that code help is available (if your IDE supports it) and making a call to the backend is as simple as calling one of the methods (see below). 
+Additionally, since they're generated using an OpenAPI spec, they can also be generated for Android (Java) or IOS (Swift) in addition to several other languages.
 
 ````js
 import {QueryAPI} from "@/services/query";
@@ -107,7 +111,7 @@ $ npm install
    ```
 ---
 Navigate to [http://localhost:8080](http://localhost:8080).
-(Or the port configured in the `.env.local` file).
+(Or the `host`:`port` configured in the `.env.local` file).
 
 # Development Overview
 Boilerplate includes the following: 

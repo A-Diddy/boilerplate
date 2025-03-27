@@ -232,51 +232,6 @@ const updateUserPassword = (userId, password) => {
   })
 };
 
-/****************************************************
- * Verify new user record.
- *
- *  Check for duplicate username or email.
- *
- ****************************************************/
-const newUserValidation = (req, res, next) => {
-  // console.log("newUserValidation(", req.body, ")");
-  // TODO: Validate email address and username format
-
-  // Validate email address and username uniqueness
-  knexInstance(USERS_TABLE)
-    .select('*')
-    .where({"username": req.body.username})
-    .orWhere({"email": req.body.email})
-    .then((results) => {
-      console.log("found matching records = ", results.length);
-      if (results.length > 0) {
-        const result = results[0];
-        let msg = "";
-        let msgs = [];
-        let errCnt = 0;
-
-        if (result.username === req.body.username) {
-          msg += 'Username already exists. Please select another username.'
-          res.locals.messages.push({username: "Username already exists"});
-          errCnt++;
-        }
-        if (result.email === req.body.email) {
-          msg += 'Email address already exists. Please select another email address or try to <a href="/login">log in</a>.'
-          res.locals.messages.push({email: "Email already exists"});
-          errCnt++;
-        }
-
-        if (errCnt >= 2) {
-          msg += 'Need to reset your password?'
-        }
-        console.log(msg);
-        return next();
-        // return res.send(msg);
-      }
-      next();
-    });
-}
-
 const isEmailNew = (email) => {
   return knexInstance(USERS_TABLE)
     .returning('id')
@@ -760,13 +715,17 @@ router.post('/login', (req, res, next) => {
  * then a new user record is inserted into the database.  If the record is
  * successfully created, the user is logged in.
  */
-router.post('/signup', newUserValidation, async function (req, res, next) {
+router.post('/signup', AuthService.newUserValidation, async function (req, res, next) {
   // console.log("[AuthRouter] PASSED New User Validation. Error messages: ", res.locals.messages);
 
   if (res.locals.messages.length > 0) {
     res.status(406);
     return res.end(JSON.stringify(new ErrorResponse("Error", "1", "Username and/or email already exist.", res.locals.messages)));
   }
+
+  // Create New User
+
+  // AuthService.createNewUser(username, email, password).then(())
 
   const salt = crypto.randomBytes(16);
   crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256', async function (err, hashedPassword) {
@@ -1190,8 +1149,10 @@ router.post('/changePassword', async function (req, res) {
  *
  *   Requires that the user is authenticated.
  *******************************************************/
-router.get('/userPermissions', AuthService.hasPriv, function (req, res) {
-  // console.log("[Auth] GET/userPermissions: user = ", req.user);
+router.get('/userPermissions',
+  AuthService.hasPriv(),
+  function (req, res) {
+  console.log("[Auth] GET/userPermissions: user = ", req.user);
   const userId = req.user?.id;
 
   AuthService.getUserPermissions(userId).then((result) => {
