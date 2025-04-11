@@ -2,11 +2,17 @@
   "name": "boilerplate",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "npm run serve",
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build --skip-plugins pwa,workbox",
+
     "buildDev": "vue-cli-service build --skip-plugins pwa,workbox --mode development",
+
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "preview": "npm run serve",
+
     "buildClients": "npm run buildAuthClient && npm run buildIoClient && npm run buildMediaClient && npm run buildQueryClient",
     "buildAuthClient": "openapi --input ./src/services/auth/auth.yaml --output ./src/services/auth --name AuthAPI",
     "buildIoClient": "openapi --input ./src/services/io/io.yaml --output ./src/services/io --name IoAPI",
@@ -15,7 +21,7 @@
     "test": "jest",
     "test:unit": "vue-cli-service test:unit",
     "test:e2e": "vue-cli-service test:e2e",
-    "lint": "vue-cli-service lint",
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
     "postinstall": "npm run buildClients"
   },
   "dependencies": {
@@ -23,6 +29,7 @@
     "@formkit/pro": "^1.0.0-alpha.58",
     "@formkit/vue": "*",
     "@mdi/font": "^7.1.96",
+    "@vitejs/plugin-vue": "^5.2.3",
     "@vue/compiler-sfc": "^3.2.45",
     "axios": "^1.2.2",
     "core-js": "^3.8.3",
@@ -37,6 +44,7 @@
     "primevue": "^3.22.2",
     "register-service-worker": "^1.7.2",
     "uuid": "^9.0.0",
+    "vite": "^6.2.6",
     "vue": "^3.4",
     "vue-router": "^4.0.3",
     "vuetify": "^3.7.8",
@@ -46,14 +54,6 @@
     "@formkit/themes": "^1.0.0-beta.12",
     "@types/jest": "^27.0.1",
     "@types/mocha": "^8.2.1",
-    "@vue/cli-plugin-babel": "~5.0.0",
-    "@vue/cli-plugin-e2e-webdriverio": "~5.0.0",
-    "@vue/cli-plugin-pwa": "~5.0.0",
-    "@vue/cli-plugin-router": "~5.0.0",
-    "@vue/cli-plugin-typescript": "~5.0.0",
-    "@vue/cli-plugin-unit-jest": "~5.0.0",
-    "@vue/cli-plugin-vuex": "~5.0.0",
-    "@vue/cli-service": "~5.0.0",
     "@vue/test-utils": "^2.0.0-0",
     "@vue/vue3-jest": "^27.0.0-alpha.1",
     "babel-jest": "^27.0.6",
@@ -61,12 +61,10 @@
     "jest": "^27.0.5",
     "openapi-typescript-codegen": "^0.23.0",
     "sass": "^1.32.7",
-    "sass-loader": "^12.0.0",
     "ts-jest": "^27.0.4",
     "ts-node": "^9.1.1",
     "typescript": "~4.7",
     "vue-loader": "^17.4.2",
-    "vue-template-compiler": "^2.7.16",
     "wdio-chromedriver-service": "^7.0.0"
   }
 }

@@ -117,7 +117,7 @@ export default defineComponent({
   },
   data() {
     return {
-      title: process.env.TITLE,
+      title: import.meta.env.TITLE,
       user: 'Default',
       token: 'default',
       model: null

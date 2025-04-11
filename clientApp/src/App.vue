@@ -3,7 +3,6 @@ Main App
 ***********************/
 <template>
   <div id="app">
-    <h1 style="color:red">Hellow</h1>
     <HeaderComp></HeaderComp>
     <router-view/>
   </div>
@@ -55,7 +54,7 @@ console.log('window.GLOBAL_CONFIG (after meta tags): ', window.GLOBAL_CONFIG);
 
 // Get any missing config from cookies and Construct the global 'connectionSettings'
 getConnectionSettings();
-getPermissions();   // This also refreshes the CSRF token (needed for SPA DEV mode since the app isn't served from the backend)
+getPermissions();   // This also refreshes the CSRF token (needed for SPA DEV mode since the app isn't served from the backend, which is where it would normally get the token)
 
 // //////////////////////////////////////////
 // }

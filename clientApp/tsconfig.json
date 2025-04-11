@@ -15,7 +15,7 @@
     "baseUrl": ".",
     "types": [
       "webpack-env",
-      
+      "vite/client",
       "@wdio/mocha-framework",
       "expect-webdriverio",
       "webdriverio/sync",

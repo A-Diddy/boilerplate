@@ -10,7 +10,7 @@ npm install
 2. Add the Formkit Pro dev license to the following line:
 ```
 # Formkit pro license string
-VUE_APP_FORMKITPRO_LIC=
+VITE_FORMKITPRO_LIC=
 ```
 *Note: See Austin for a dev license.*
 

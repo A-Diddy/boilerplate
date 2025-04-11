@@ -17,7 +17,7 @@ import 'primevue/resources/themes/mdc-dark-indigo/theme.css';
 import { plugin, defaultConfig } from '@formkit/vue';
 
 // Formkit pro
-const lic = process.env.VUE_APP_FORMKITPRO_LIC || "";
+const lic = import.meta.env.VITE_FORMKITPRO_LIC || "";
 import { createProPlugin, inputs } from '@formkit/pro';
 // const pro = createProPlugin('fk-47b10729bf8', inputs);
 const pro = createProPlugin(lic, inputs);

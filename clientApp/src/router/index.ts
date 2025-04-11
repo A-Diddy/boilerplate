@@ -3,14 +3,17 @@ import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import EmailVerify from '../views/EmailVerifyView.vue'
 import LoginView from '../views/LoginView.vue'
+import SignupView from '../views/SignupView.vue'
+import ForgotPasswordView from '../views/ForgotPasswordView.vue'
+import ResetPasswordView from '../views/ResetPasswordView.vue'
+import ProfileView from '../views/ProfileView.vue'
+import UnauthorizedView from '@/views/UnauthorizedView.vue'
+
 // @ts-ignore
 import * as UserService from "@/services/user/UserService";
 import {AuthAPI} from "@/services/auth";
-
-// import * as AuthService from "@/services/auth/services/AuthService";
 // @ts-ignore
 import {getConnectionSettings, hasPriv} from "@/utils/appUtils.js";
-import {IoAPI} from "@/services/io";
 
 const authService = new AuthAPI(getConnectionSettings()).auth;
 
@@ -82,25 +85,25 @@ const routes: Array<RouteRecordRaw> = [
   }, {
     path: '/login',
     name: 'login',
-    component: () => import(/* webpackChunkName: "auth" */ '../views/LoginView.vue')
+    component: () => LoginView
   }, {
     path: '/signup',
     name: 'signup',
-    component: () => import(/* webpackChunkName: "auth" */ '../views/SignupView.vue')
+    component: () => SignupView
   }, {
     path: '/forgot_password',
     name: 'forgotPassword',
-    component: () => import(/* webpackChunkName: "auth" */ '../views/ForgotPasswordView.vue')
+    component: () => ForgotPasswordView
   }, {
     path: '/reset_password',
     name: 'reset_password',
-    component: () => import(/* webpackChunkName: "auth" */ '../views/ResetPasswordView.vue')
+    component: () => ResetPasswordView
   }
   // TODO: Change password... (when authenticated, enter the current password and the new password + confirm)
   // , {
   //   path: '/change_password',
   //   name: 'changePassword',
-  //   component: () => import(/* webpackChunkName: "auth" */ '../views/ForgotPasswordView.vue')
+  //   component: () => import('../views/ForgotPasswordView.vue')
   // }
   , {
     path: '/verify_email',
@@ -117,11 +120,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'profile',
     meta: {navBar: true},
     beforeEnter: [auth],
-    component: () => import(/* webpackChunkName: "profile" */ '../views/ProfileView.vue')
+    component: () => ProfileView
   }, {
     path: '/unauthorized',
     name: 'unauthorized',
-    component: () => import(/* webpackChunkName: "onboarding" */ '../views/UnauthorizedView.vue')
+    component: () => UnauthorizedView
   }
 ]
 

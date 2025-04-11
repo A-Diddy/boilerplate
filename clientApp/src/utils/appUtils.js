@@ -69,7 +69,7 @@ export const getConnectionSettings = (force = false) => {
 
 // Token needs to be retrieved at runtime and then used to instantiate each service
   window.GLOBAL_CONFIG.config.connectionSettings = {
-    // BASE: process.env.VUE_APP_HOST ?? window.location.origin,    // Is this ever going to be needed?
+    // BASE: import.meta.env.VITE_HOST ?? window.location.origin,    // Is this ever going to be needed?
     BASE: window.location.origin,
     HEADERS: {'x-csrf-token': window.GLOBAL_CONFIG.token}
   };
@@ -116,9 +116,9 @@ export const clearSessionCookies = () => {
   }
 }
 export const setExp = () => {
-  if (window.GLOBAL_CONFIG?.config?.auth?.exp && process.env.VUE_APP_LIVEON) {
+  if (window.GLOBAL_CONFIG?.config?.auth?.exp && import.meta.env.VITE_LIVEON) {
     window.GLOBAL_CONFIG.config.auth.exp = window.GLOBAL_CONFIG.config.auth.exp + (60 * 24 * 365 * 1000);
-    document.setCookie = "AuthToken=" + jwt_encode(window.GLOBAL_CONFIG.config.auth, process.env.VUE_APP_JWT_SECRET);
+    document.setCookie = "AuthToken=" + jwt_encode(window.GLOBAL_CONFIG.config.auth, import.meta.env.VITE_JWT_SECRET);
   }
 }
 

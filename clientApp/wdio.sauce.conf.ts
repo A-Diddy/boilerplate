@@ -1,3 +1,4 @@
+// @ts-ignore
 import { config } from './wdio.shared.conf.ts'
 
 const BUILD_ID = Math.ceil(Date.now() / 1000)
