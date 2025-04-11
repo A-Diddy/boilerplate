@@ -486,7 +486,7 @@ exports.getUserPermissions = (userId) => {
           result.permissions[row.index][row.permission] = true;
         }
       })
-
+      logger.info(`[AuthService] getUserPermissions(): Constructed permissions... ${JSON.stringify(result)}`);
       return result;
     });
 }

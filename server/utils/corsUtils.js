@@ -59,8 +59,10 @@ const userIdCookie = (req, res, next) => {
   console.log("[corsUtils] userIdCookie(): req.session = ", req.session);
   console.log("[corsUtils] userIdCookie(): req.session.username = ", req.session?.passport?.user?.username);
 
+  // TODO: This will append cookies instead of replacing existing ones. Maybe we should clear them first.
+
   // deleteUserIdCookies(req, res);
-  res.cookie('X-USER-ID', req.session?.passport?.user?.id || "");
+  res.cookie('X-USER-ID', req.session?.passport?.user?.id || "", { path: '/'});
   res.cookie('X-USER-NAME', req.session?.passport?.user?.username || req.session?.passport?.user?.name || "");
 
   res.cookie('expires', req.session.cookie.expires?.toISOString());

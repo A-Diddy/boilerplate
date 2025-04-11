@@ -1,0 +1,30 @@
+@media (prefers-color-scheme: light) {
+  :root {
+    --theme-secondary-color: #0047fc;
+    --fk-color-input: #000000;
+    --fk-color-main: var(--fk-color-input);
+    --fk-color-placeholder: #aaaaaa;
+    --fk-color-button: #000000;
+    --fk-max-width-input: 100%;
+    --fk-background: #ffffff;
+    --fk-bg-button: rgba(0, 0, 0, 0);
+    --fk-bg-btn: rgba(0, 0, 0, 0);
+    --fk-bg-2: #ffffff;
+    --fk-bg-3: #f8f8f8;
+    --fk-bg-3a: #ffffff;
+    --fk-bg-4: #dddddd;
+    --fk-bg-5: #cccccc;
+    --fk-bg-6: #c8c8c8;
+    --fk-bg-button-hover: var(--fk-bg-3);
+    --filter-elevate-2: drop-shadow(0 4px 4px #777);
+    --filter-elevate-3: drop-shadow(0 8px 8px #777);
+  }
+
+  form.formkit-form {
+    --fk-color-input: #000000;
+  }
+
+  select > option.formkit-option {
+    background-color: var(--fk-background);
+  }
+}

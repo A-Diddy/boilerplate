@@ -1,4 +1,4 @@
-require('dotenv').config({ path:  `.env.${process.env.NODE_ENV}` });
+require('dotenv').config({path: `.env.${process.env.NODE_ENV}`});
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -43,7 +43,7 @@ app.locals.pluralize = require('pluralize');
 // Request processing logic start
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));  // Static assets from server
 
@@ -55,7 +55,7 @@ app.use(session({
   secret: process.env["SESSION_SECRET"],
   resave: false,            // Don't save session if unmodified
   saveUninitialized: false, // Don't create session until something stored.
-  store: new pgSessionStore({pool : pgPool, tableName : 'sessions'})
+  store: new pgSessionStore({pool: pgPool, tableName: 'sessions'})
 }));
 
 /*console.log("Creating session with config: ", process.env.SESSION_SECRET, process.env['SESSION_ROLLING'], process.env['SESSION_MAXAGE_TIMEOUT'], parseInt( process.env['SESSION_MAXAGE_TIMEOUT'], 10), process.env['SESSION_SAMESITE']);
@@ -76,14 +76,55 @@ app.use(session({
 
 // const csrfProtect = csrf({cookie: true})
 
+const csrfOptions = {cookie: true};
+
+// If bypassing CSRF tokens, we still want to generate them... we just ignore checking them for each method
+if (process.env.BYPASS_CSRF_TOKEN === "true") {
+  csrfOptions.ignoreMethods = ['GET', 'HEAD', 'OPTIONS', 'POST'];
+}
+
+// Generate CSRF protection middleware using configured options...
+//   const csrfProtect = csrf(csrfOptions);
+
+// console.log("[App] csrfProtect = ", csrfProtect);
+// console.log("[App] csrfProtect = ", csrfProtect());
+
 // Enforce CSRF tokens with each POST request
-if (process.env.BYPASS_CSRF_TOKEN !== "true") {
-  app.use(
-    // (req, res, next) => {
+// app.use(csrf(csrfOptions));
+
+// error handler
+app.use(
+  function (req, res, next) {
+    csrf(csrfOptions)(req, res, next);
+  },
+  function (err, req, res, next) {
+  if (err.code !== 'EBADCSRFTOKEN') return next(err);
+
+  fileLogger.error(err);
+  console.log("CSRF ERROR: ", err);
+
+  // handle CSRF token errors here
+  res.status(403);
+  res.send('form tampered with');
+})
+
+
+  /*app.use(
+    // csrfProtect
+
+    (req, res, next) => {
     //   console.log("CSRF Token validation... cookies = ", req.cookies);
-    //   next();
-    // },
-    csrf()
+
+      csrfProtect(req, res, next);
+      console.log("csrf req.csrfToken = ", req.csrfToken());
+      console.log("csrf result errors? = ", res.error);
+      console.log("csrf result: cookies = ", req.cookies);
+
+      next();
+    },
+
+    // csrf()
+
 //   ,
 //   (req, res, next) => {
 //   console.log("csrf result errors? = ", res.error);
@@ -91,24 +132,29 @@ if (process.env.BYPASS_CSRF_TOKEN !== "true") {
 //   next();
 // }
   );
-}
+// }
+*/
 
+
+
+// This is needed here since it needs to be included in each request response.
 app.use(userIdCookie);    // Puts user details (id) into a cookie
 
 
 // CORS and pre-flight handling
 // if (process.env.TESTMODE === "true") {
-  app.use(cors);
+app.use(cors);
 // }
 
 // Authenticate session with each reqeust
 app.use(passport.authenticate('session'));
 
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   const msgs = req.session.messages || [];
   res.locals.messages = msgs;
-  res.locals.hasMessages = !! msgs.length;
+  res.locals.hasMessages = !!msgs.length;
   req.session.messages = [];
+  req.session.returnTo = req?.path;     // TODO: [Austin] 2026-04-01: Test this
   next();
 });
 
@@ -123,11 +169,13 @@ app.use(function(req, res, next) {
  *               served separately).
  ****************************************************/
 // TODO: Move this to a utils (corsUtils or a new sessionUtils?)
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   // Add the CSRF token to locals so it can be used in the SSR templates.
-  if (process.env.BYPASS_CSRF_TOKEN !== "true") {
-    res.locals.csrfToken = req.csrfToken() ?? "TEST MODE";
-  }
+  // if (process.env.BYPASS_CSRF_TOKEN !== "true") {
+  res.locals.csrfToken = req.csrfToken() ?? "TEST MODE";
+  // }
+
+  console.log("[App] req.locals.csrfToken = ", res.locals.csrfToken);
 
   console.log("[App] Adding session details to cookie: ", req.session);
   // Add the CSRF token to a cookie so the app can be served separately (dev server)
@@ -148,7 +196,9 @@ app.use((req, res, next) => {
  * Service routes
  *******************************************************/
 app.use('/', indexRouter);    // Client app
-app.use('/', authRouter_Local);     // Sign up, sign in, sign out, OAuth
+if (process.env['SERVER_SIDE_AUTH']?.toLowerCase() === 'true') {
+  app.use('/', authRouter_Local);     // Sign up, sign in, sign out, OAuth
+}
 app.use('/auth', authRouter); // Sign up, sign in, sign out, OAuth
 app.use('/io', ioRouter);     // Data Retrieval and Updates (by index and uuid)
 app.use('/q', queryRouter);   // Data Queries
@@ -174,19 +224,19 @@ app.use('/', appRouter);      // App routes (for views in client, not server ass
 app.use(express.static(path.join(__dirname, 'clientApp/dist')));
 
 // Catch-all... anything else gets a 404 and error handled
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error', {title: process.env.TITLE });
+  res.render('error', {title: process.env.TITLE});
 });
 
 module.exports = app;

@@ -15,7 +15,7 @@ const UUID = require('uuid');
 const nodemailer = require('nodemailer');
 const {userIdCookie} = require("../server/utils/corsUtils");
 const logger = require("../server/utils/logger");
-const ErrorResponse = require('./routerUtils').ErrorResponse;
+const {ErrorResponse, GenericResponse} = require('./routerUtils');
 const AuthService = require("../server/services/auth/authService");
 
 const router = express.Router();
@@ -593,6 +593,7 @@ function setFederatedCredentialCookie(req, res, next) {
  * sent to the `POST /login/password` route.
  */
 router.get('/login', function (req, res, next) {
+  // TODO: All 'res.render' calls should be removed from this router file since the client app will be rendering the pages, right?
   res.render('login', {title: process.env.TITLE});
 });
 
@@ -619,12 +620,18 @@ router.get('/login', function (req, res, next) {
  */
 // router.post('/login/password', (req, res, next) => {
 
-router.use(express.json());
+router.use( (req, res, next) => {
+  express.json();   // If request data comes over as form type, convert it to JSON
+  // TODO: If we get to this point, everything should be JSON API responses... right?
+  res.setHeader('Content-Type', 'application/json');
+  next();
+});
 
 
 router.post('/login', (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json');
+    // res.setHeader('Content-Type', 'application/json');
     console.log("[AuthRouter] POST/auth/login:  req.session = ", req.session);
+    console.log("[AuthRouter] POST/auth/login:  req.body = ", req.body);
 
 
     // Session is created in the next step.
@@ -645,7 +652,7 @@ router.post('/login', (req, res, next) => {
         return res.end(JSON.stringify(new ErrorResponse("Server Error", "1", errDetails?.message, [])));
       } else if (!user) {
         // Incorrect username or password
-        res.status(200);
+        res.status(401);
         return res.end(JSON.stringify(new ErrorResponse("Error", "1", errDetails?.message, [])));
       }
 
@@ -784,35 +791,56 @@ router.post('/signup', AuthService.newUserValidation, async function (req, res, 
   });
 });
 
+// TODO: This should be removed from the JSON API...
 router.get('/forgot', function (req, res) {
   res.render('forgot', {user: req.user, title: process.env.TITLE});
 });
 
-
-router.post('/forgot', async function (req, res) {
-  // console.log("[Auth] POST/forgot(): req.body = ", req.body);
+/******************************************************************
+ * Forgot Password
+ *
+ *    When a user is unable to login due to a forgotten password,
+ *    calling this method will send an email with a link to
+ *    change the password.
+ *
+ *    The link will contain a token string, which is submitted
+ *    with the request to change the password (POST->change_password).
+ ******************************************************************/
+router.post('/forgot_password', async function (req, res) {
+  // console.log("[Auth] POST/forgot_password(): req.body = ", req.body);
 
   const username = req.body.username;
   const email = req.body.email;
   let msg = '';
+  let msgTitle = 'Success';
 
   // Check for username (default)
   // Check for email address (fallback)
 
   if (!username && !email) {
-    return res.send('Must provide a username or email address');
+    // return res.send('Must provide a username or email address');    // TODO: Convert this to ErrorResponse type JSON
+    msg = 'Must provide a username or email address';
+    res.status(406);
+    return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
   }
 
   const user = await knexInstance(USERS_TABLE)
     .select('*')
-    .where({"username": username})
-    .orWhere({"email": email})
+    // .where({"username": username})
+    // .orWhere({"email": email})
+    .where( (builder) => {
+      if (username) {
+        builder.where("username", username);
+      } else if (email) {
+        builder.where("email", email);
+      }
+    })
     .then((result) => {
       if (result.length <= 0) {
         console.log("User not found: ", result);
         // If not found, return message
-        msg = "Unable to locate a user for the entered username or email";
-        msg += ' Need to sign up?'
+        msg = `Unable to locate a user for the entered username or email...`;
+        msg += ` need to sign up (${process.env.HOST}/signup)?`
       } else {
         // console.log("User FOUND: ", result);
         return result[0];
@@ -823,7 +851,9 @@ router.post('/forgot', async function (req, res) {
     console.log("User not found: ", user);
 
     // TODO: Add the message to the res.locals.messages array instead of updating the response body... we want to stay on the page.
-    return res.send(msg);
+    // return res.send(msg); // TODO: Convert this to ErrorResponse type JSON
+    res.status(503);
+    return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
   }
 
   // else Generate token
@@ -853,7 +883,10 @@ router.post('/forgot', async function (req, res) {
           .where({user_id: user.id})
           .andWhere({entity: PASSWORD_ENTITY})
       } else {
+        // TODO: This will just keep reseting the same token each time.
+        //  Should we invalidate the last token and create a new one instead? This would have better history
         newPasswordResetTokenColumns.json_data.resetCount = 1 + result[0].json_data.resetCount;
+        newPasswordResetTokenColumns.expire_in = lifetime;
         await knexInstance(TOKENS_TABLE)
           .update(newPasswordResetTokenColumns)
           .where({user_id: user.id})
@@ -863,24 +896,28 @@ router.post('/forgot', async function (req, res) {
     .catch((e) => {
       console.log(e);
       // TODO: Send an error response and end process chain
+      msg = "Unable to create token";
+      res.status(503);
+      return res.end(JSON.stringify(new ErrorResponse("Server Error", "1", msg, [])));
     });
 
   // Send reset page link with embedded token via email
+  const resetURL = `${process.env.HOST}/reset_password/${token}`;
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
     to: user.email,
     subject: 'Password Reset for Example Boilerplate',
     text: 'A request has been made to reset your Example Boilerplate account password.\n\n' +
       'Please click on the following link or paste it into your browser to complete the process:\n' +
-      process.env.HOST + '/reset/' + token + '\n\n' +
+      resetURL + '\n\n' +
       // 'http://' + req.headers.host + '/reset/' + token + '\n\n' +
       'If you did not request to reset the password, please ignore this email and your password will remain unchanged.\n'
   };
 
-  // TODO: Mondularize mailer...
+  // TODO: Modularize mailer...
   try {
     const transporter = await nodemailer.createTransport({
-      service: 'gmail',
+      service: process.env.EMAIL_SERVICE,
       auth: {
         user: process.env.EMAIL_ADDRESS,
         pass: process.env.EMAIL_PASSWORD
@@ -890,23 +927,26 @@ router.post('/forgot', async function (req, res) {
     await transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
         console.log(error);
-        msg = 'There was an error sending an email to ' + user.email + '. Might want to try again.';
+        msg = `There was an error sending the email${email === user.email ? " to '" + email + "' " : ""}. Please try again later.`;
+        res.status(503);
+        return res.end(JSON.stringify(new ErrorResponse("Server Error", "1", msg, [])));
       } else {
         console.log('Email sent: ' + info.response);
         msg = `An email has been sent ${email === user.email ? "to '" + email + "' " : ""}with further instructions.`;
       }
-      res.send(msg);
-
-
+      // res.send(msg);
       // res.redirect('/forgot');
+
+      return res.end(JSON.stringify(new GenericResponse(msgTitle, "1", msg, [msg])));
+
     });
   } catch (e) {
     console.log(e);
-    msg = "There appears to be an error sending an email...";
-    res.send(msg);
+    msg = "There appears to be an error sending the email. Please try again later.";
+    // res.send(msg);
+    res.status(503);
+    return res.end(JSON.stringify(new ErrorResponse("Server Error", "1", msg, [])));
   }
-
-
 });
 
 
@@ -915,10 +955,19 @@ router.post('/forgot', async function (req, res) {
  * redirect to the /forgot page to create a new one.
  **********************************************************/
 router.get('/reset', function (req, res) {
+  // TODO: This should be removed from the JSON API...
   res.render('forgot', {user: req.user, title: process.env.TITLE});
 });
 
-router.get('/reset/:token', async function (req, res) {
+
+/**********************************************************
+ * Reset password (with token in query string)
+ *
+ *    Gets the reset password token from the query string.
+ *
+ **********************************************************/
+router.get('/reset_password/:token', async function (req, res) {
+  // TODO: This should be removed from the JSON API... the
   const token = req.params.token;
   let msg = '';
   // console.log("[Auth] POST/reset: token = ", token);
@@ -971,11 +1020,21 @@ router.get('/reset/:token', async function (req, res) {
 
   // console.log("Found user from token: ", user);
 
-  res.render('reset', {userId: user.id, token: token, title: process.env.TITLE});
+
+  // TODO: This should return to the client SPA, but what path (i.e. /password_reset_success)?
+  // res.render('reset', {userId: user.id, token: token, title: process.env.TITLE});
+
+  res.redirect('/reset_password');    // This should return the user to the client SPA (or SSR of the home page)
 });
 
-
-router.post('/reset', async function (req, res) {
+/********************************************************************
+ * Reset Password
+ *
+ *    Given a valid token, change the password without a session.
+ *    This is the final step of the "Forgot Password" flow.
+ *
+ ********************************************************************/
+router.post('/reset_password', async function (req, res) {
   // console.log("[Auth] POST/reset(): req.body = ", req.body);
   const happyTime = 1000 * 60 * 2;  // 2 minutes in milliseconds
   const userId = req.body.userId;
@@ -987,12 +1046,18 @@ router.post('/reset', async function (req, res) {
   // console.log({userId, token});
 
   if (!userId || !token) {
-    return res.send('Invalid request... missing user and/or token parameters');
+    // TODO: Convert to ErrorResponse object...
+    // return res.send('Invalid request... missing user and/or token parameters');
+    msg = "Missing user and/or token parameters";
+    return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
   }
 
   // Check that password and confirm_password match
   if (password !== confirmPassword) {
-    return res.send('New password confirmation does not match');
+    // TODO: Convert to ErrorResponse object...
+    // return res.send('New password confirmation does not match');
+    msg = "New password confirmation does not match";
+    return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
   }
 
   // Check if token is still valid for userId
@@ -1019,11 +1084,12 @@ router.post('/reset', async function (req, res) {
               return results[0];
             } else {
               // This should technically never happen
-              msg = "ERROR: No user found with the provided token.";
+              msg = "No user found with the provided token.";
             }
           })
           .catch((e) => {
             console.log(e);
+            // TODO: Send an ErrorResponse
             return next(e);
           });
       }
@@ -1031,13 +1097,16 @@ router.post('/reset', async function (req, res) {
 
   if (!user || !user.id) {
     console.log("Unable to find user for provided token: ", user);
-    return res.send(msg);
+    // TODO: Convert to ErrorResponse object...
+    // return res.send(msg);
+    return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
   }
 
   // Salt, hash and save new password
   const salt = crypto.randomBytes(16);
   crypto.pbkdf2(password, salt, 310000, 32, 'sha256', async function (err, hashedPassword) {
     if (err) {
+      // TODO: Send an ErrorResponse
       return next(err);
     }
 
@@ -1060,13 +1129,16 @@ router.post('/reset', async function (req, res) {
 
         req.login(user, function (err) {
           if (err) {
+            // TODO: Send an ErrorResponse
             return next(err);
           }
-          res.redirect('/');
+          // res.redirect('/');    // This should return the user to the client SPA (or SSR of the home page)
+          return res.end(JSON.stringify(new GenericResponse("Success", "1", msg, [msg])));
         });
       })
       .catch((e) => {
         console.log(e);
+        // TODO: Send an ErrorResponse
         return next(e);
       });
   });
@@ -1079,7 +1151,7 @@ router.post('/reset', async function (req, res) {
  *
  *   Requires that the user is authenticated.
  *******************************************************/
-router.get('/changePassword', function (req, res) {
+router.get('/change_password', function (req, res) {
   // console.log("[Auth] GET/changePassword: user = ", req.user);
   const userId = req.user?.id;
   let msg = '';
@@ -1092,7 +1164,14 @@ router.get('/changePassword', function (req, res) {
   res.render('changePassword', {user: req.user, title: process.env.TITLE, messages: [msg]});
 });
 
-router.post('/changePassword', async function (req, res) {
+/********************************************************
+ * Change Password
+ *
+ *   Changes the password for users already logged in (requires
+ *   an active session).
+ *   This is not associated with the "Reset Password" flow.
+ ********************************************************/
+router.post('/change_password', async function (req, res) {
   let msg = '';
   const userId = req.user?.id;
   const existingPassword = req.body.existing_password;
@@ -1157,7 +1236,7 @@ router.get('/userPermissions',
 
   AuthService.getUserPermissions(userId).then((result) => {
     res.status(200);
-    return res.end(result);
+    return res.end(JSON.stringify(result));
   }).catch((msg) => {
     logger.info(msg);
     res.status(406);
@@ -1333,9 +1412,11 @@ router.post('/logout', function (req, res, next) {
     //   next();
     // }
 
+    userIdCookie(req, res);   // Clear the session cookies
+
 
     res.status(200);
-    return res.end();
+    return res.end("{}");
 
   });
 });
@@ -1346,15 +1427,19 @@ router.post('/logout', function (req, res, next) {
  * This route logs the user out.
  */
 router.get('/logout', function (req, res, next) {
-  console.log("[AuthRouter] GET/logout(): req = ", req);
+  console.log("[AuthRouter] GET/logout(): req = ", req?.user);
   req.logout(function (err) {
     if (err) {
       return next(err);
     }
+
     if (process.env['SERVER_SIDE_AUTH']?.toLowerCase() === "true") {
-      res.redirect('/auth/login');
+      // res.redirect('/auth/login');
+      res.redirect('/');
     } else {
-      next();
+      // req.session.returnTo = '/';
+      // next();
+      res.redirect('/');
     }
   });
 });

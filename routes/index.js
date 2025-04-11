@@ -78,8 +78,15 @@ router.get('/',
   // TODO: If user is not logged in, no user exists, so we need to ensure a dummy username is available... or the template bombs.
   // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function(req, res, next) {
+
+  console.log("[index] GET '/': Processing request..........");
   if (!req.user) {
-    return res.render('login', {title: process.env.TITLE });
+    // TODO!!: This should not render the login page if 'SERVER_SIDE_AUTH' is false. Instead, the request should pass to the
+    //  next handler (and eventually to the client app).
+    if (process.env['SERVER_SIDE_AUTH']?.toLowerCase() === 'true') {
+      req.session.returnTo = req.path;    // TODO: [Austin] 2025-04-01: Test this line
+      return res.render('login', {title: process.env.TITLE});
+    }
   }
   next();
 },

@@ -68,10 +68,19 @@ const checkUser = (req, res, next) => {
 
 class ErrorResponse {
   constructor(name, code, description, errors) {
-    this.name = name ?? "";
+    this.name = name ?? "Error";
     this.code = code ?? "";
     this.description = description ?? "";
     this.errors = errors || [];
+  }
+}
+
+class GenericResponse {
+  constructor(name, code, description, msgs) {
+    this.name = name ?? "Success";
+    this.code = code ?? "";
+    this.description = description ?? "";
+    this.msgs = msgs || [];
   }
 }
 
@@ -79,6 +88,7 @@ class ErrorResponse {
 module.exports = {
   ensureLogIn: getLogInFunc(),
   getLogInFunc: getLogInFunc(),
-  ErrorResponse: ErrorResponse
+  ErrorResponse: ErrorResponse,
+  GenericResponse: GenericResponse
 }
 

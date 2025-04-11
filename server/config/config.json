@@ -33,6 +33,13 @@
       }
     }
   },
+  "auth": {
+    "get": {
+      "default": {
+        "isAuthenticated": true
+      }
+    }
+  },
   "default": {
     "default": {
       "default": {

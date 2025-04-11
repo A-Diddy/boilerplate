@@ -676,7 +676,8 @@ router.post('/login/password', (req, res, next) => {
   (req, res, next) => {
     console.log("[Auth] req.user = ", req.user);
     console.log("req.sessions = ", req.session);
-    return res.redirect(req?.session?.returnTo || '/');
+    // TODO: if (process.env['SERVER_SIDE_AUTH']?. toLowerCase() === 'true') { redirect } else { next() }
+    return res.redirect(req?.session?.returnTo || '/');     // TODO: If returnTo is 'auth/logout', we logout after loggin in
   });
 
 /* GET /signup

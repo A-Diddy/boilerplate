@@ -29,14 +29,29 @@ paths:
         description: Auth credentials as application/x-www-form-urlencoded data
         required: true
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                password:
-                  type: string
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/logout:
+    post:
+      summary: End any active sessions for the current user.
+      operationId: logout
+      description: End the current session.
+      tags:
+        - auth
       responses:
         '200':
           description: Success
@@ -102,7 +117,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /auth/forgot_password/send:
+  /auth/forgot_password:
     post:
       operationId: sendForgotPassword
       tags:
@@ -128,7 +143,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /auth/forgot_password/reset:
+  /auth/reset_password:
     post:
       operationId: resetForgotPassword
       tags:
@@ -154,7 +169,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /auth/permissions:
+  /auth/userPermissions:
     get:
       operationId: getPermissions
       tags:
