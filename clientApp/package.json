@@ -4,15 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "npm run serve",
-
     "buildDev": "vue-cli-service build --skip-plugins pwa,workbox --mode development",
-
+    "start": "npm run dev",
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
     "preview": "npm run serve",
-
+    "devBuild": "vite build --minify false",
     "buildClients": "npm run buildAuthClient && npm run buildIoClient && npm run buildMediaClient && npm run buildQueryClient",
     "buildAuthClient": "openapi --input ./src/services/auth/auth.yaml --output ./src/services/auth --name AuthAPI",
     "buildIoClient": "openapi --input ./src/services/io/io.yaml --output ./src/services/io --name IoAPI",
@@ -37,6 +35,7 @@
     "datatables.net-responsive-dt": "^2.4.0",
     "datatables.net-vue3": "^2.0.0",
     "formkit": "*",
+    "gravatar": "^1.8.2",
     "jwt-decode": "^3.1.2",
     "jwt-encode": "^1.0.1",
     "luxon": "^3.2.1",
@@ -47,7 +46,7 @@
     "vite": "^6.2.6",
     "vue": "^3.4",
     "vue-router": "^4.0.3",
-    "vuetify": "^3.7.8",
+    "vuetify": "^3.8.2",
     "vuex": "^4.0.0"
   },
   "devDependencies": {

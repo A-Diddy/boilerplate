@@ -1,7 +1,7 @@
-import {IoAPI} from "@/services/io";
-import {QueryAPI} from "@/services/query";
-import {MediaAPI} from "@/services/media";
-import {expireSession, getConnectionSettings} from "@/utils/appUtils"
+import {IoAPI} from "../io";
+import {QueryAPI} from "../query";
+import {MediaAPI} from "../media";
+import {expireSession, getConnectionSettings} from "../../utils/appUtils";
 
 
 const ioService = new IoAPI(getConnectionSettings()).io;
@@ -94,8 +94,31 @@ export const getUsersByOrg = (orgId = null) => {
  * @returns {boolean}
  ************************************************/
 export const isAuthenticated = () => {
+  console.log("[UserService] isAuthenticated(): window.GLOBAL_CONFIG.config?.session?.expires ", new Date(window.GLOBAL_CONFIG.config?.session?.expires).getTime());
+  console.log("[UserService] isAuthenticated(): new Date()/1000 ",new Date().getTime());
+  console.log("[UserService] isAuthenticated(): returning ", !(new Date(window.GLOBAL_CONFIG.config?.session?.expires).getTime() < new Date().valueOf()));
   //return window.GLOBAL_CONFIG.config?.auth?.exp > new Date()/1000;
-  return !(window.GLOBAL_CONFIG.config?.session?.expires < new Date()/1000);
+
+  // Session is active is a username/id exists (from cookies)
+  // and session expiration is null or greater than current time...
+
+  const username = window.GLOBAL_CONFIG.config?.user?.username;
+  const expires = window.GLOBAL_CONFIG.config?.session?.expires;
+
+  if (typeof username === "string"
+    && username !== ""
+    && username !== "anonymous") {
+    console.log("1");
+    if (expires !== null) {
+      console.log("2");
+      return (new Date(expires).getTime() > new Date().getTime());
+    }
+    console.log("3");
+    return true;
+  }
+  console.log("4");
+  return false;
+
 }
 
 /************************************************
@@ -104,6 +127,6 @@ export const isAuthenticated = () => {
  * @returns {boolean}
  ************************************************/
 export const clearAuth = () => {
+  console.log("[UserService] clearAuth(): Calling 'expireSession()'")
   expireSession();
 }
-

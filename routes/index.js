@@ -13,10 +13,12 @@ var ensureLoggedIn = ensureLogIn();
 function fetchTodos(req, res, next) {
   db.all('SELECT * FROM todos WHERE owner_id = ?', [
     req.user.id
-  ], function(err, rows) {
-    if (err) { return next(err); }
-    
-    var todos = rows.map(function(row) {
+  ], function (err, rows) {
+    if (err) {
+      return next(err);
+    }
+
+    var todos = rows.map(function (row) {
       return {
         id: row.id,
         title: row.title,
@@ -25,7 +27,9 @@ function fetchTodos(req, res, next) {
       }
     });
     res.locals.todos = todos;
-    res.locals.activeCount = todos.filter(function(todo) { return !todo.completed; }).length;
+    res.locals.activeCount = todos.filter(function (todo) {
+      return !todo.completed;
+    }).length;
     res.locals.completedCount = todos.length - res.locals.activeCount;
     next();
   });
@@ -40,7 +44,7 @@ const fetchBaseConfig = (req, res, next) => {
     config.user = {
       id: 'xyz',
       name: 'usermon',
-      username: 'usernamemon'
+      username: 'anonymous'
     };
 
     if (req.user?.id) {
@@ -77,26 +81,24 @@ router.get('/',
   // TODO: Define which specific routes need authentication instead
   // TODO: If user is not logged in, no user exists, so we need to ensure a dummy username is available... or the template bombs.
   // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  function(req, res, next) {
+  function (req, res, next) {
 
-  console.log("[index] GET '/': Processing request..........");
-  if (!req.user) {
-    // TODO!!: This should not render the login page if 'SERVER_SIDE_AUTH' is false. Instead, the request should pass to the
-    //  next handler (and eventually to the client app).
-    if (process.env['SERVER_SIDE_AUTH']?.toLowerCase() === 'true') {
-      req.session.returnTo = req.path;    // TODO: [Austin] 2025-04-01: Test this line
-      return res.render('login', {title: process.env.TITLE});
+    console.log("[index] GET '/': Processing request..........");
+    if (!req.user) {
+      // TODO!!: This should not render the login page if 'SERVER_SIDE_AUTH' is false. Instead, the request should pass to the
+      //  next handler (and eventually to the client app).
+      if (process.env['SERVER_SIDE_AUTH']?.toLowerCase() === 'true') {
+        req.session.returnTo = req.path;    // TODO: [Austin] 2025-04-01: Test this line
+        return res.render('login', {title: process.env.TITLE});
+      }
     }
-  }
-  next();
-},
+    next();
+  },
   fetchBaseConfig,
-  function(req, res, next) {
-  res.locals.filter = null;  // Used in the rendered `index.ejs` template
-  res.render(path.join(__dirname, '../clientApp/dist/index'), { user: req.user, title: process.env.TITLE });
-});
-
-
+  function (req, res, next) {
+    res.locals.filter = null;  // Used in the rendered `index.ejs` template
+    res.render(path.join(__dirname, '../clientApp/dist/index.html'), {user: req.user, title: process.env.TITLE});
+  });
 
 
 /*

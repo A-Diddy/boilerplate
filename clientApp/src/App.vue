@@ -5,6 +5,7 @@ Main App
   <div id="app">
     <HeaderComp></HeaderComp>
     <router-view/>
+    <SessionMgr></SessionMgr>
   </div>
 </template>
 
@@ -12,6 +13,7 @@ Main App
 import HeaderComp from '@/components/Header.vue';
 import '@mdi/font/css/materialdesignicons.css';
 import {getConnectionSettings, getPermissions} from '@/utils/appUtils';
+import SessionMgr from '@/components/SessionMgr.vue';
 
 // export default defineComponent({
 //   name: 'HomeView',
@@ -54,7 +56,7 @@ console.log('window.GLOBAL_CONFIG (after meta tags): ', window.GLOBAL_CONFIG);
 
 // Get any missing config from cookies and Construct the global 'connectionSettings'
 getConnectionSettings();
-getPermissions();   // This also refreshes the CSRF token (needed for SPA DEV mode since the app isn't served from the backend, which is where it would normally get the token)
+// getPermissions();   // This also refreshes the CSRF token (needed for SPA DEV mode since the app isn't served from the backend, which is where it would normally get the token)
 
 // //////////////////////////////////////////
 // }

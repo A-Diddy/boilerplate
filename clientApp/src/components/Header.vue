@@ -18,12 +18,12 @@
         <v-list-item @click="this.$router.push('/profile')">
           <v-list-item-title>Profile</v-list-item-title>
         </v-list-item>
-<!--        <v-list-item @click="this.$router.push('/gigs')">
-          <v-list-item-title>Gigs</v-list-item-title>
-        </v-list-item>
-          <v-list-item @click="this.$router.push('/o/17fd04e2-e9ac-40d3-b745-a297c57146d7')">
-          <v-list-item-title>Onboarding</v-list-item-title>
-        </v-list-item>-->
+        <!--        <v-list-item @click="this.$router.push('/gigs')">
+                  <v-list-item-title>Gigs</v-list-item-title>
+                </v-list-item>
+                  <v-list-item @click="this.$router.push('/o/17fd04e2-e9ac-40d3-b745-a297c57146d7')">
+                  <v-list-item-title>Onboarding</v-list-item-title>
+                </v-list-item>-->
       </v-list>
     </v-menu>
 
@@ -35,37 +35,27 @@
 
     <v-spacer></v-spacer>
 
-<!--    <div id="gigsActions" class="gigsActions">
-      <div>
-        <router-link to="/gig">
-          <v-btn>
-            Create Requisition
-          </v-btn>
-        </router-link>
-      </div>
-    </div>-->
+    <!--    <div id="gigsActions" class="gigsActions">
+          <div>
+            <router-link to="/gig">
+              <v-btn>
+                Create Requisition
+              </v-btn>
+            </router-link>
+          </div>
+        </div>-->
 
 
     <!-- Main menu -->
     <v-tabs v-model="model">
-      <router-link to="/">
-        <v-tab>Home</v-tab>
-      </router-link>
-      <router-link to="/profile">
-        <v-tab>Profile</v-tab>
-      </router-link>
-<!--      <router-link to="/gigs">
-        <v-tab>Gigs</v-tab>
-      </router-link>-->
-<!--      <router-link to="/o/17fd04e2-e9ac-40d3-b745-a297c57146d7">
-        <v-tab>Onboarding Demo</v-tab>
-      </router-link>-->
+      <v-tab to="/">Home</v-tab>
+      <v-tab to="/profile">Profile</v-tab>
     </v-tabs>
 
     <!-- TODO: Search option -->
-<!--    <v-btn icon>
-      <v-icon>mdi-magnify</v-icon>
-    </v-btn>-->
+    <!--    <v-btn icon>
+          <v-icon>mdi-magnify</v-icon>
+        </v-btn>-->
 
     <!-- Profile drop down menu -->
     <v-menu>
@@ -97,9 +87,13 @@
             Change Password
           </a>
         </v-list-item>
+        <v-list-item value="" @click="login()">
+          <v-icon icon="mdi-login"></v-icon>
+          Sign in
+        </v-list-item>
         <v-list-item value="" @click="logout()">
           <v-icon icon="mdi-logout"></v-icon>
-            Sign out
+          Sign out
         </v-list-item>
       </v-list>
     </v-menu>
@@ -139,10 +133,10 @@ export default defineComponent({
   },
   methods: {
     async logout() {
-      // const res = await axios.post('/logout', {token: this.token});
-      // Redirect to login.
-      this.$router.push('/logout')     // TODO: [Austin] 2025-04-09: Test this instead of the window.location change
-      // window.location.href = "/logout";
+      this.$router.push('/logout')
+    },
+    async login() {
+      this.$router.push('/login')
     }
   }
 })

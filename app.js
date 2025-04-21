@@ -18,6 +18,7 @@ const ioRouter = require('./routes/ioRouter');
 const queryRouter = require('./routes/queryRouter');
 const mediaRouter = require('./routes/mediaRouter');
 const appRouter = require('./routes/appRouter');
+const ejs = require('ejs');
 
 // Database connection just for session storage... see /server/db/dbConfig.js for knex DB config.
 // TODO: Possibly use knex for session storage also
@@ -35,6 +36,9 @@ const pgPool = new pg.Pool({
 // Let's go...
 const app = express();
 
+// CORS and pre-flight handling
+app.use(cors);
+
 // EJS view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -49,13 +53,29 @@ app.use(express.static(path.join(__dirname, 'public')));  // Static assets from 
 
 // app.use(csrfCookie);   // Adds csrf token to header
 
+// TODO: Test this...
+// If you have your node.js behind a proxy and are using 'true', you need to set "trust proxy" in express
+if (JSON.parse(process.env['SESSION_COOKIE_SECURE'])) {
+  app.set('trust proxy', 1);
+}
+
+console.log("Creating session with config: ", process.env.SESSION_SECRET, process.env['SESSION_ROLLING'], process.env['SESSION_MAXAGE_TIMEOUT'], parseInt( process.env['SESSION_MAXAGE_TIMEOUT'], 10), process.env['SESSION_SAMESITE']);
+
+console.log("Session config for ROLLING = ", JSON.parse(process.env['SESSION_ROLLING'] ?? true));
+
 // Create auth 'sessions' database connection
 // See https://expressjs.com/en/resources/middleware/session.html
 app.use(session({
   secret: process.env["SESSION_SECRET"],
-  resave: false,            // Don't save session if unmodified
-  saveUninitialized: false, // Don't create session until something stored.
-  store: new pgSessionStore({pool: pgPool, tableName: 'sessions'})
+  resave: true,            // Don't save session if unmodified
+  saveUninitialized: false, // Don't create session until something modified.
+  store: new pgSessionStore({pool: pgPool, tableName: 'sessions'}),
+  rolling: JSON.parse(process.env['SESSION_ROLLING'] ?? true),
+  cookie: {
+    maxAge: parseInt(process.env['SESSION_MAXAGE_TIMEOUT'], 10) || null,
+    sameSite: JSON.parse(process.env['SESSION_SAMESITE']) ?? true,
+    secure: JSON.parse(process.env['SESSION_COOKIE_SECURE'] ?? false)
+  }
 }));
 
 /*console.log("Creating session with config: ", process.env.SESSION_SECRET, process.env['SESSION_ROLLING'], process.env['SESSION_MAXAGE_TIMEOUT'], parseInt( process.env['SESSION_MAXAGE_TIMEOUT'], 10), process.env['SESSION_SAMESITE']);
@@ -95,60 +115,30 @@ if (process.env.BYPASS_CSRF_TOKEN === "true") {
 // error handler
 app.use(
   function (req, res, next) {
+    console.log("[App] req.session.cookie = ", req.session.cookie);
+    next();
+  },
+  function (req, res, next) {
     csrf(csrfOptions)(req, res, next);
   },
   function (err, req, res, next) {
-  if (err.code !== 'EBADCSRFTOKEN') return next(err);
+    // Handle CSRF token creation and validation errors
+    if (err.code !== 'EBADCSRFTOKEN') return next(err);
 
-  fileLogger.error(err);
-  console.log("CSRF ERROR: ", err);
+    fileLogger.error(err);
+    console.log("CSRF ERROR: ", err);
 
-  // handle CSRF token errors here
-  res.status(403);
-  res.send('form tampered with');
-})
+    // handle CSRF token errors here
+    res.status(403);
+    res.send('form tampered with');
+  }
+)
 
-
-  /*app.use(
-    // csrfProtect
-
-    (req, res, next) => {
-    //   console.log("CSRF Token validation... cookies = ", req.cookies);
-
-      csrfProtect(req, res, next);
-      console.log("csrf req.csrfToken = ", req.csrfToken());
-      console.log("csrf result errors? = ", res.error);
-      console.log("csrf result: cookies = ", req.cookies);
-
-      next();
-    },
-
-    // csrf()
-
-//   ,
-//   (req, res, next) => {
-//   console.log("csrf result errors? = ", res.error);
-//   console.log("csrf result: cookies = ", req.cookies);
-//   next();
-// }
-  );
-// }
-*/
-
-
-
-// This is needed here since it needs to be included in each request response.
-app.use(userIdCookie);    // Puts user details (id) into a cookie
-
-
-// CORS and pre-flight handling
-// if (process.env.TESTMODE === "true") {
-app.use(cors);
-// }
 
 // Authenticate session with each reqeust
 app.use(passport.authenticate('session'));
 
+// Session properties to reset with each request
 app.use(function (req, res, next) {
   const msgs = req.session.messages || [];
   res.locals.messages = msgs;
@@ -157,6 +147,8 @@ app.use(function (req, res, next) {
   req.session.returnTo = req?.path;     // TODO: [Austin] 2026-04-01: Test this
   next();
 });
+
+
 
 /****************************************************
  * Create a CSRF token and add it to the response.
@@ -184,6 +176,10 @@ app.use(function (req, res, next) {
   next();
 });
 
+// This is needed here since it needs to be included in each request response.
+app.use(userIdCookie);    // Puts user details (id) into a cookie
+
+
 // Log request and response details...
 app.use((req, res, next) => {
   res.on('finish', () => {
@@ -191,6 +187,14 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+
+// Set the view engine to EJS
+app.set('view engine', 'ejs');
+// Register .html extension as EJS-renderable (so we can SSR .html files without the .ejs extension)
+app.engine('html', ejs.renderFile);
+// Set the views directory
+// app.set('views', path.join(__dirname, 'views'));
 
 /*******************************************************
  * Service routes

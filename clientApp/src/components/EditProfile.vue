@@ -1,4 +1,5 @@
 <template>
+  <h1>Hello</h1>
   <FormKitSchema :schema="schema" :data="data"/>
 </template>
 
@@ -90,11 +91,11 @@ const data = reactive({
     return steps[stepName].valid && steps[stepName].errorCount === 0
   },
   submit: async (formData, node) => {
-    console.log("submit: ", {formData, node});
+    console.log("submit: ", {formData, node, userData});
 
     try {
       formData["_csrf"] = window.GLOBAL_CONFIG?.token; // Get CSRF Token
-      formData.id = formData.id || userData.id || UUID();
+      formData.id = formData.id || userData?.id || UUID();
       formData.userId = window.GLOBAL_CONFIG?.config?.user?.id;
       console.log(formData);
       const res = await ioService.insertUpdate(formData, "profiles");
@@ -104,6 +105,7 @@ const data = reactive({
       node.clearErrors()
       // alert('Your application was submitted successfully!')
     } catch (err) {
+      console.log(err);
       node.setErrors(err.formErrors, err.fieldErrors)
     }
   },

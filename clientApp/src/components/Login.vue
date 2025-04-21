@@ -94,8 +94,9 @@ export default defineComponent({
       authService.login(<LoginRequest>loginReq)
         .then(() => {
           getConnectionSettings(true);    // Refresh auth cookie
-          getPermissions();               // Refresh permissions with new session
-          router.push({name: 'home', replace: false}); // Update the URL and the history
+          // getPermissions();               // Refresh permissions with new session
+          const routeTo = typeof this.$route.query?.r === "string" ? this.$route.query?.r : 'home';  // Redirect if this was originally for a protected resource
+          router.push({name: routeTo, replace: false});   // Update the URL and the history
         })
         .catch((response: any) => {
           this.messages = `${response.body.name}: ${response.body.description}`;

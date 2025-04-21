@@ -1,6 +1,4 @@
 <template>
-  <h1 style="color:red; height: 100px;">Hello</h1>
-
   <div class="home">
     <Login></Login>
   </div>

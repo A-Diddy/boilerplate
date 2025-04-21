@@ -189,7 +189,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /auth/session:
+  /auth/updateSession:
     post:
       operationId: updateSession
       tags:

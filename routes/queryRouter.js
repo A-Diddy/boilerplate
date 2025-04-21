@@ -51,7 +51,7 @@ const setTestUser = (req, res, next) => {
     req.user = {
       id: 'xyz',
       name: 'usermon',
-      username: 'usernamemon'
+      username: 'anonymous'
     }
     config.user = {
       id: req.user.id,

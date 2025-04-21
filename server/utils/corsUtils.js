@@ -64,8 +64,7 @@ const userIdCookie = (req, res, next) => {
   // deleteUserIdCookies(req, res);
   res.cookie('X-USER-ID', req.session?.passport?.user?.id || "", { path: '/'});
   res.cookie('X-USER-NAME', req.session?.passport?.user?.username || req.session?.passport?.user?.name || "");
-
-  res.cookie('expires', req.session.cookie.expires?.toISOString());
+  res.cookie('expires', req.session?.passport?.user?.id && req.session.cookie?.expires ? req.session.cookie.expires?.toISOString() : 0);
 
 /*  // Add the CSRF token to locals so it can be used in the SSR templates.
   res.locals.csrfToken = req.csrfToken();

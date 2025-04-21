@@ -9,11 +9,9 @@ import ResetPasswordView from '../views/ResetPasswordView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import UnauthorizedView from '@/views/UnauthorizedView.vue'
 
-// @ts-ignore
-import * as UserService from "@/services/user/UserService";
 import {AuthAPI} from "@/services/auth";
 // @ts-ignore
-import {getConnectionSettings, hasPriv} from "@/utils/appUtils.js";
+import {clearAuth, getConnectionSettings, getPermissions, hasPriv, isAuthenticated} from "@/utils/appUtils.js";
 
 const authService = new AuthAPI(getConnectionSettings()).auth;
 
@@ -22,8 +20,8 @@ const authService = new AuthAPI(getConnectionSettings()).auth;
  * @param to
  ***********************************************/
 const auth = (to: any) => {
-  if (!UserService.isAuthenticated() && to.name !== 'login') {
-    return {name: 'login'};
+  if (!isAuthenticated() && to.name !== 'login') {
+    return {name: 'login', query: {r: to.name}};    // Route to login and set redirect ('r') query param.
   } else {
     console.log("[router] auth(): Allowing access to: ", to.path);
   }
@@ -59,17 +57,17 @@ const priv = (to: any) => {
  ***********************************************/
 const unauth = (to: any) => {
   console.log("[index] unauth(",to,")");
-  if (!UserService.isAuthenticated() && to.name !== 'login') {
+  if (!isAuthenticated() && to.name !== 'login') {
     // Already logged out
-    return {name: 'home'};
+    // return {name: 'home'};
   } else {
     // Proceed to end session
     authService.logout();
     // Clear cookies
-    UserService.clearAuth();
+    clearAuth();
     console.log("[router] unauth(): Removed auth session: ");
-    return {name: 'login'};
   }
+  return {name: 'login'};
 }
 
 /***********************************************
@@ -83,21 +81,27 @@ const routes: Array<RouteRecordRaw> = [
     meta: {navBar: true},
     component: HomeView
   }, {
+    path: '/home',
+    name: 'home2',
+    beforeEnter: [auth],
+    meta: {navBar: true},
+    component: HomeView
+  }, {
     path: '/login',
     name: 'login',
-    component: () => LoginView
+    component: LoginView
   }, {
     path: '/signup',
     name: 'signup',
-    component: () => SignupView
+    component: SignupView
   }, {
     path: '/forgot_password',
     name: 'forgotPassword',
-    component: () => ForgotPasswordView
+    component: ForgotPasswordView
   }, {
     path: '/reset_password',
     name: 'reset_password',
-    component: () => ResetPasswordView
+    component: ResetPasswordView
   }
   // TODO: Change password... (when authenticated, enter the current password and the new password + confirm)
   // , {
@@ -120,17 +124,30 @@ const routes: Array<RouteRecordRaw> = [
     name: 'profile',
     meta: {navBar: true},
     beforeEnter: [auth],
-    component: () => ProfileView
+    component: ProfileView
   }, {
     path: '/unauthorized',
     name: 'unauthorized',
-    component: () => UnauthorizedView
+    component: UnauthorizedView
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+/*************************************
+ * beforeEach():
+ *
+ *   Called for each route and before
+ *   individual 'beforeEnter' guards.
+ *
+ *************************************/
+router.beforeEach(async (to, from, next) => {
+  // Ensure permissions are loaded before routing.
+  await getPermissions();  // This prevents the screens from flashing if the permissions are updated after being loaded.
+  next();
 })
 
 export default router

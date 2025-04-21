@@ -18,6 +18,7 @@ getLogInFunc = (req, res, next) => {
             msgCode: "FORBIDDEN",
             message: "You must be signed in to access this resource."
           };
+          res.status(errorResponse.status);
           res.send(errorResponse);
           return;
         }
@@ -39,7 +40,7 @@ const setTestUser = (req, res, next) => {
     req.user = {
       id: 'xyz',
       name: 'usermon',
-      username: 'usernamemon'
+      username: 'anonymous'
     }
     config.user = {
       id: req.user.id,

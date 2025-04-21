@@ -1245,7 +1245,10 @@ router.get('/userPermissions',
 });
 
 
-
+router.post('/updateSession', (req, res, next) => {
+  res.status(200);
+  return res.end(JSON.stringify({}));
+})
 
 
 /* GET /login/federated/accounts.google.com
