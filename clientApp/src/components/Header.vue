@@ -11,7 +11,7 @@
       <template v-slot:activator="{ props }">
         <v-app-bar-nav-icon v-bind="props"></v-app-bar-nav-icon>
       </template>
-      <v-list>
+      <v-list  id="mobileList_accountMenu">
         <v-list-item @click="this.$router.push('/')">
           <v-list-item-title>Home</v-list-item-title>
         </v-list-item>
@@ -60,18 +60,18 @@
     <!-- Profile drop down menu -->
     <v-menu>
       <template v-slot:activator="{ props }">
-        <v-btn icon v-bind="props">
-          <v-avatar>
+        <v-btn icon v-bind="props" id="button_userAvatar">
+          <v-avatar  id="avatar_userAvatar">
             <v-img src="/img/sampleProfilePic.png" alt="Profile picture"></v-img>
           </v-avatar>
         </v-btn>
       </template>
 
-      <v-list>
-        <v-list-item style="vertical-align: bottom" value="sound">
+      <v-list id="list_accountMenu">
+        <v-list-item style="vertical-align: bottom">
           <v-list-item-title class="menuItem_user">
             <span class="user">  {{ user }}</span>
-            <v-avatar style="float:right">
+            <v-avatar style="float:right" id="listItem_userAvatar">
               <v-img src="/img/sampleProfilePic.png" alt="Profile picture">
               </v-img>
             </v-avatar>
@@ -81,17 +81,17 @@
           <v-icon icon="mdi-account-edit"></v-icon>
           Edit profile
         </v-list-item>
-        <v-list-item @click="this.$router.push('/profile')">
+        <v-list-item @click="this.$router.push('/change_password')">
           <v-icon icon="mdi-lock"></v-icon>
-          <a href="/changePassword">
+<!--          <a href="/changePassword">-->
             Change Password
-          </a>
+<!--          </a>-->
         </v-list-item>
-        <v-list-item value="" @click="login()">
+        <v-list-item @click="login()">
           <v-icon icon="mdi-login"></v-icon>
           Sign in
         </v-list-item>
-        <v-list-item value="" @click="logout()">
+        <v-list-item @click="logout()">
           <v-icon icon="mdi-logout"></v-icon>
           Sign out
         </v-list-item>
@@ -102,7 +102,8 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue';
-import axios from 'axios';
+// @ts-ignore
+import {getUserName, getToken} from "@/utils/appUtils.js";
 
 export default defineComponent({
   name: 'HeaderComp',
@@ -118,18 +119,15 @@ export default defineComponent({
     }
   },
   created() {
-    // Load meta config from server
-    // this.user = window['GLOBAL_CONFIG']?.user || 'Devmon';
-    this.user = window['GLOBAL_CONFIG']?.config?.user?.name ||
-      window['GLOBAL_CONFIG']?.config?.user?.username ||
-      'Devmon';   // Fallback for testing
-    this.token = window['GLOBAL_CONFIG']?.token || 'Tokemon';
+    this.user = getUserName();
+    this.token = getToken();
+    document.addEventListener('sessionUpdated', this.sessionUpdated);
     console.log('token: ', this.token);
     console.log('user: ', this.user);
     console.log("router = ", this.$router);
   },
-  logout() {
-    console.log("logout");
+  unmounted() {
+    document.removeEventListener('sessionUpdated', this.sessionUpdated)
   },
   methods: {
     async logout() {
@@ -137,6 +135,9 @@ export default defineComponent({
     },
     async login() {
       this.$router.push('/login')
+    },
+    sessionUpdated() {
+      this.user = getUserName();
     }
   }
 })

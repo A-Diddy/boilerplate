@@ -23,7 +23,6 @@ import {defineComponent} from 'vue';
 // @ts-ignore
 import {getConnectionSettings} from '@/utils/appUtils';
 import {AuthAPI, SendForgotPasswordRequest} from "@/services/auth";
-// @ts-ignore
 import {paths} from "@/utils/paths";
 
 const authService = new AuthAPI(getConnectionSettings()).auth;

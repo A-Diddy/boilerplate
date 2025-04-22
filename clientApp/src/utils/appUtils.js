@@ -12,6 +12,16 @@ let pendingPermissionRequest = null; // Used to ensure we only ever have one req
 let privMap;
 const DEFAULT_ROLE_TITLE = "Reach Talent, Inc.";
 
+/****************************************************
+ * Get permissions for current user.
+ *
+ *    Intended to be called whenever the session updates.
+ *    This could be on login, logout or session refresh (in Session Mgr).
+ *
+ * @param force {Boolean}: Force a server request even if permissions exist (Default = false).
+ * @returns {Promise<unknown>}: If a request is pending, a reference to it. Otherwise,
+ * a resolved promise with the current permissions from memory.
+ ****************************************************/
 export const getPermissions = async (force = false) => {
   console.log("getPermisssions(): ");
 
@@ -31,18 +41,7 @@ export const getPermissions = async (force = false) => {
   }
 
   // Otherwise, fetch permissions
-
   const authService = new AuthAPI(getConnectionSettings()).auth;
-  //
-  // const perm = await authService.getPermissions()
-  //   .catch((e) => {
-  //     console.log(e);
-  //     return {};
-  //   });
-  // console.log("Got permissions: ", perm);
-  // window.GLOBAL_CONFIG.config.authorization = perm;
-
-
 
   return pendingPermissionRequest = authService.getPermissions()
     .then((results) => {
@@ -62,6 +61,7 @@ export const getPermissions = async (force = false) => {
 }
 
 export const getConnectionSettings = (force = false) => {
+  console.log("[AppUtils] getConnectionSettings(",force,")");
   window.GLOBAL_CONFIG = window.GLOBAL_CONFIG || {};
   window.GLOBAL_CONFIG.config = window.GLOBAL_CONFIG.config || {};
   window.GLOBAL_CONFIG.config.user = window.GLOBAL_CONFIG.config.user || {};
@@ -129,12 +129,17 @@ export const getConnectionSettings = (force = false) => {
     HEADERS: {'x-csrf-token': window.GLOBAL_CONFIG.token}
   };
 
-  // TODO: Find a way to trigger the 'sessionUpdated" event so that SessionMgr starts the 'setSessionExpCheck()' again.
-  if (getSessionExp() > 0 && (!window.GLOBAL_CONFIG.config.authorization || force)) {
+  triggerSessionUpdate(force);
+
+  return window.GLOBAL_CONFIG.config.connectionSettings;
+}
+
+export const triggerSessionUpdate = (force = false) => {
+  if ((getSessionExp() > 0 && (!window.GLOBAL_CONFIG.config.authorization)) || force) {
     getPermissions(force)
       .then(() => {
         const event = new CustomEvent("sessionUpdated", { detail: window.GLOBAL_CONFIG.config.auth });
-        // console.log("[AppUtils] Session updated... triggering event, 'sessionUpdated'");
+        console.log("[AppUtils] Session updated... triggering event, 'sessionUpdated'");
         document.dispatchEvent(event)
       })
       .catch((e) => {
@@ -145,8 +150,6 @@ export const getConnectionSettings = (force = false) => {
       });
     setExp();
   }
-
-  return window.GLOBAL_CONFIG.config.connectionSettings;
 }
 
 export const expireSession = () => {
@@ -168,6 +171,8 @@ export const expireSession = () => {
     clearPermissions();
     clearSessionCookies();
   }
+
+  triggerSessionUpdate(true);
 }
 
 /***************************************************
@@ -201,6 +206,7 @@ export const clearSessionCookies = () => {
     }
   }
 }
+
 export const setExp = () => {
   if (getSessionExp() && import.meta.env.VITE_LIVEON) {
     // window.GLOBAL_CONFIG.config.auth.exp = window.GLOBAL_CONFIG.config.auth.exp + (60 * 24 * 365 * 1000);
@@ -527,7 +533,15 @@ export const getUserId = () => {
 }
 
 export const getUserName = () => {
-  return window["GLOBAL_CONFIG"]?.config?.user?.name || "";
+  return window["GLOBAL_CONFIG"]?.config?.user?.name
+    || window["GLOBAL_CONFIG"]?.config?.user?.username
+    || "Anon";
+}
+
+export const getToken = () => {
+  return window['GLOBAL_CONFIG']?.token
+    || window['GLOBAL_CONFIG']?.session['_csrf']    // I don't think this is needed anymore.
+    || 'Tokemon'; // For dev
 }
 
 /*******************************************

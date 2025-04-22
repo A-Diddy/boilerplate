@@ -172,7 +172,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 // @ts-ignore
-import {hasPriv} from "@/utils/appUtils.js";
+import {hasPriv, getUserName} from "@/utils/appUtils.js";
 
 const sampleBadge = {
   type: "warning",
@@ -231,7 +231,7 @@ export default defineComponent({
       },
       rail: true,
       hasPriv: hasPriv,
-      username: window["GLOBAL_CONFIG"]?.config?.user?.name
+      username: getUserName()
     }
   },
   watch: {
@@ -243,7 +243,12 @@ export default defineComponent({
     this.darkMode = JSON.parse(localStorage.getItem("darkMode") || "false") || false;
     this.onResize();
     window.addEventListener('resize', this.onResize, true);
+    document.addEventListener('sessionUpdated', this.sessionUpdated);
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', this.onModeChange, true);
+  },
+  unmounted() {
+    window.removeEventListener('resize', this.onResize, true);
+    document.removeEventListener('sessionUpdated', this.sessionUpdated);
   },
   methods: {
     onModeChange(e: any) {
@@ -263,6 +268,9 @@ export default defineComponent({
       setTimeout(() => {
         saveMode(this.darkMode);
       }, 0);
+    },
+    sessionUpdated() {
+      this.username = getUserName();
     }
   }
 })

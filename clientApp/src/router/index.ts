@@ -60,14 +60,13 @@ const unauth = (to: any) => {
   if (!isAuthenticated() && to.name !== 'login') {
     // Already logged out
     // return {name: 'home'};
-  } else {
-    // Proceed to end session
-    authService.logout();
-    // Clear cookies
-    clearAuth();
-    console.log("[router] unauth(): Removed auth session: ");
+  } else {    // Proceed to end session
+    authService.logout().then(() => {
+      clearAuth();    // Clear cookies
+      console.log("[router] unauth(): Removed auth session: ");
+    });
+    return {name: 'login'};
   }
-  return {name: 'login'};
 }
 
 /***********************************************

@@ -1,8 +1,7 @@
 <template>
   <div class="container_profile">
-    <h1>Profilez</h1>
     <Suspense>
-      <EditProfile/>
+      <Profile/>
     </Suspense>
   </div>
 </template>
@@ -11,12 +10,13 @@
 import { defineComponent, ref } from 'vue';
 import { FormKit, FormKitSchema } from '@formkit/vue';
 import '@formkit/themes/genesis';
-import EditProfile from "@/components/EditProfile.vue";
+// import EditProfile from "@/components/EditProfile.vue";
+import Profile from "@/components/Profile.vue";
 
 export default defineComponent({
   name: 'ProfileComp',
   components: {
-    EditProfile
+    Profile
   },
   props: {
     msg: String
