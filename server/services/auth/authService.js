@@ -7,6 +7,7 @@ const configPath = "./server/config";
 const configFile = configPath + "/config.json";
 const UUID = require('uuid');
 const {insertUpdate, verifyRequiredFields} = require("../../utils/systemUtils");
+const {validateUsername, validateEmail} = require("../../utils/userUtils");
 
 const USERS_TABLE = "users";
 const FED_CRED_TABLE = "federated_credentials";
@@ -108,7 +109,32 @@ function getConfig(key) {
  ****************************************************/
 exports.newUserValidation = (req, res, next) => {
   // console.log("newUserValidation(", req.body, ")");
-  // TODO: Validate email address and username format
+  let msg = "";
+  let errCnt = 0;
+  res.locals.errorMap.username = res.locals.errorMap.username || [];
+  res.locals.errorMap.email = res.locals.errorMap.email || [];
+
+  // Validate email address and username format ----------
+  const usernameErrors = validateUsername(req.body.username);
+  if (usernameErrors) {
+    msg += usernameErrors
+    res.locals.messages.push({username: usernameErrors});
+    res.locals.errorMap.username.push(usernameErrors);
+    errCnt++;
+  }
+  const emailErrors = validateEmail(req.body.email);
+  if (emailErrors) {
+    msg += emailErrors
+    res.locals.messages.push({email: emailErrors});
+    res.locals.errorMap.email.push(emailErrors);
+    errCnt++;
+  }
+
+  if (errCnt > 0) {
+    console.log(msg);
+    return next();
+  }
+  // ------------------------------------------------------
 
   // Validate email address and username uniqueness
   knexInstance(USERS_TABLE)
@@ -119,18 +145,19 @@ exports.newUserValidation = (req, res, next) => {
       console.log("found matching records = ", results.length);
       if (results.length > 0) {
         const result = results[0];
-        let msg = "";
-        let msgs = [];
-        let errCnt = 0;
 
         if (result.username === req.body.username) {
+          const existsMsg = "Username already exists";
           msg += 'Username already exists. Please select another username.'
-          res.locals.messages.push({username: "Username already exists"});
+          res.locals.messages.push({username: existsMsg});
+          res.locals.errorMap.username.push(existsMsg);
           errCnt++;
         }
         if (result.email === req.body.email) {
+          const existsMsg = "Email already exists";
           msg += 'Email address already exists. Please select another email address or try to <a href="/login">log in</a>.'
-          res.locals.messages.push({email: "Email already exists"});
+          res.locals.messages.push({email: existsMsg});
+          res.locals.errorMap.email.push(existsMsg);
           errCnt++;
         }
 

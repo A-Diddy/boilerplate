@@ -142,6 +142,7 @@ app.use(passport.authenticate('session'));
 app.use(function (req, res, next) {
   const msgs = req.session.messages || [];
   res.locals.messages = msgs;
+  res.locals.errorMap = req.session.errorMap || {};
   res.locals.hasMessages = !!msgs.length;
   req.session.messages = [];
   req.session.returnTo = req?.path;     // TODO: [Austin] 2026-04-01: Test this

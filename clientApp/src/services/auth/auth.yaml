@@ -929,6 +929,9 @@ components:
             type: array
             items:
               type: string
+        errorMap:
+          type: object
+          additionalProperties: true
       required:
         - code
         - name

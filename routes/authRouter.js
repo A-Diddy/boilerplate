@@ -17,6 +17,7 @@ const {userIdCookie} = require("../server/utils/corsUtils");
 const logger = require("../server/utils/logger");
 const {ErrorResponse, GenericResponse} = require('./routerUtils');
 const AuthService = require("../server/services/auth/authService");
+const {getUsernameByEmail} = require("../server/utils/userUtils");
 
 const router = express.Router();
 
@@ -628,11 +629,20 @@ router.use( (req, res, next) => {
 });
 
 
-router.post('/login', (req, res, next) => {
+router.post('/login', async (req, res, next) => {
     // res.setHeader('Content-Type', 'application/json');
     console.log("[AuthRouter] POST/auth/login:  req.session = ", req.session);
     console.log("[AuthRouter] POST/auth/login:  req.body = ", req.body);
 
+    //  If a username is not provided and an email address is, lookup username by email and auth with it...
+    if (req.body.username.includes('@')) {
+      // Email was provided in username field
+      req.body.email = req.body.email || req.body.username;
+      req.body.username = ''; // Usernames should not have an '@'
+    }
+    if (!req.body.username && req.body.email.includes('@')) {
+      req.body.username = await getUsernameByEmail(req.body.email);
+    }
 
     // Session is created in the next step.
     // Call this directly (instead of middleware, to pass in req, res and next objects.
@@ -727,7 +737,9 @@ router.post('/signup', AuthService.newUserValidation, async function (req, res, 
 
   if (res.locals.messages.length > 0) {
     res.status(406);
-    return res.end(JSON.stringify(new ErrorResponse("Error", "1", "Username and/or email already exist.", res.locals.messages)));
+    return res.end(JSON.stringify(
+      new ErrorResponse("Error", "1", "Invalid username or email", res.locals.messages, res.locals.errorMap)
+    ));
   }
 
   // Create New User

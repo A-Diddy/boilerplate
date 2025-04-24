@@ -943,9 +943,27 @@ export const clone = (item) => {
   return result;
 }
 
+/****************************************************************************
+ * Get query string
+ *
+ *    Given the query object from 'this.$route.query', will return a string
+ *    format with the 'path' and 'token' parameters.
+ *
+ * @param query {object}: From 'this.$route.query'
+ * @returns {string}: The query string in string format (?path="xyz"&invite_token="abc")
+ ****************************************************************************/
+export const getQueryString = (query = {}) => {
+  let qs = "";
 
-
-
-
-
-
+  // Otherwise, build the query string.
+  qs = "?";
+  if (query.path) {    // If a path is provided, include it.
+    qs += `next_url=${this.$route.query.path}`;
+  }
+  if (query.token || query.path?.includes("token")) {    // If a token is provided, include it.
+    if (qs.includes('=')) qs += '&';    // If we added a previous param, include the '&' to separate this one.
+    const token = query.token || query.path?.toString().split("token=")[1].split("&")[0];
+    qs += `invite_token=${token}`;
+  }
+  return qs === "?" ? "" : qs;
+}

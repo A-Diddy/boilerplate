@@ -1,9 +1,10 @@
+const PATH_ROOT = "/auth/login/federated";
 
 const paths = {
-  signin_google: "/api/auth/google",
-  signin_linkedin: "/api/auth/linkedin",
-  signin_facebook: "/api/auth/facebook",
-  signin_apple: "/api/auth/apple",
+  signin_google: PATH_ROOT + "/google",
+  signin_linkedin: PATH_ROOT + "/linkedin",
+  signin_facebook: PATH_ROOT + "/facebook",
+  signin_apple: PATH_ROOT + "/apple",
 }
 
 export {paths};

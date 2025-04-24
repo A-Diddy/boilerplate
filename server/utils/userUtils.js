@@ -13,6 +13,15 @@ const getUserIdByEmail = (email) => {
     });
 }
 
+const getUsernameByEmail = (email) => {
+  return knexInstance(USERS_TABLE)
+    .returning('username')
+    .where({email: email})
+    .then((results,) => {
+      return results[0]?.username;
+    });
+}
+
 /*****************************************************
  * Create a profile record
  *
@@ -73,4 +82,51 @@ const createUser = (userObj) => {
     });
 }
 
-module.exports = {createUser, getUserIdByEmail};
+/*****************************************************************
+ * Validate username
+ *
+ *    Checks that the username string passes the set of rules. If any
+ *    rule is violated, an error message indicating the violation is
+ *    returned.
+ *
+ * @param username {string}: The username string to validate
+ * @returns {string}: Error messages, if any. Otherwise, a blank string
+ *****************************************************************/
+const validateUsername = (username = '') => {
+  const invalidSymbols = ['@'];
+
+  if (!username || typeof username !== "string") {
+    return "Username must be a non-empty string";
+  }
+
+  for (let i=0; i<invalidSymbols.length; i++) {
+    if (username.includes(invalidSymbols[i])) {
+      return `Username may not contain the '${invalidSymbols[i]}' symbol`
+    }
+  }
+
+  // Additional rules here
+
+  return '';
+}
+
+/*****************************************************************
+ * Validate email
+ *
+ *    Checks that the email string passes the set of rules. If any
+ *    rule is violated, an error message indicating the violation is
+ *    returned.
+ *
+ * @param email {string}: The email string to validate
+ * @returns {string}: Error messages, if any. Otherwise, a blank string
+ *****************************************************************/
+const validateEmail = (email = '') => {
+  const emailRegex = new RegExp("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$.");
+  if (emailRegex.test(email)) {
+    return 'Email is not valid';
+  }
+
+  return '';
+}
+
+module.exports = {createUser, getUserIdByEmail, getUsernameByEmail, validateUsername, validateEmail};

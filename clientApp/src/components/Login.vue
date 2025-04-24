@@ -13,6 +13,7 @@
         height="112"
         src="/img/logo.png"
       ></v-img>
+
       <v-card-title>
         Login
       </v-card-title>
@@ -30,8 +31,8 @@
             name="username"
             id="username"
             autocomplete="on"
-            label="Name"
-            :error-messages="nameErrors">
+            label="Username"
+            :error-messages="usernameErrors">
           </v-text-field>
           <v-text-field
             density="compact"
@@ -42,9 +43,9 @@
             id="email"
             autocomplete="on"
             label="Email"
+            type="email"
             :error-messages="emailErrors">
           </v-text-field>
-
           <v-text-field
             :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
             :type="visible ? 'text' : 'password'"
@@ -73,118 +74,22 @@
             Log In
           </v-btn>
         </section>
-
       </form>
 
-<!--      <section>
-        <v-btn
-          class="mb-8"
-          size="large"
-          variant="outlined"
-          color=""
-          block
-          id="button_login"
-          type="submit"
-          @click="isModal ? setView('forgotPassword') : goToPath('/forgot_password')"
-        >
-          Reset password
-        </v-btn>
-
-        <v-btn
-          class="mb-8"
-          size="large"
-          variant="outlined"
-          color=""
-          block
-          id="button_login"
-          type="submit"
-          @click="isModal ? setView('signup') : goToPath(`/signup${$route.query.path ? '?path='+$route.query.path : $props.static ? '?path='+$route.fullPath : ''}`)"
-        >
-          Sign up
-        </v-btn>
-      </section>-->
-
-      <section class="authLinks mt-4">
-        <v-card-text class="text-center">
-
-          <v-banner
-            lines="one"
-          >
-            <template v-slot:text>
-              Don't have an account?
-            </template>
-            <template v-slot:actions>
-              <v-btn
-                @click="isModal ? setView('signup') : goToPath(`/signup${$route.query.path ? '?path='+$route.query.path : $props.static ? '?path='+$route.fullPath : ''}`)"
-              >
-                Sign up
-              </v-btn>
-            </template>
-          </v-banner>
-
-          <v-banner
-            lines="one"
-          >
-            <template v-slot:text>
-              Forgot password?
-            </template>
-            <template v-slot:actions>
-              <v-btn @click="isModal ? setView('forgotPassword') : goToPath('/forgot_password')">
-                Reset password
-              </v-btn>
-            </template>
-          </v-banner>
-          <!--
-                    <p class="help">
-                      Don't have an account?
-                      <v-btn v-if="isModal" onclick="setView('signup')">Sign up</v-btn>
-                      <v-btn v-else
-                             :to="`/signup${$route.query.path ? '?path='+$route.query.path : $props.static ? '?path='+$route.fullPath : ''}`">Sign up</v-btn>
-                    </p>
-                    <p class="help">
-                      Forgot password?
-                      <v-btn v-if="isModal" onclick="setView('forgotPassword')">Reset password</v-btn>
-                      <v-btn v-else to="/forgot_password">Reset password</v-btn>
-                    </p>-->
-        </v-card-text>
-      </section>
-      <v-card
-        class="mb-12"
-        color="surface-variant"
-        variant="plain"
-      >
-        <div class="mt-4">
-          <a class="button social google active" :href="paths.signin_google + getQueryString()">
-            <span></span>
-            <v-icon>mdi-google</v-icon>
-            <span>Sign in with Google</span>
-          </a>
-          <a class="button social linkedin active" :href="paths.signin_linkedin + getQueryString()">
-            <v-icon>mdi-linkedin</v-icon>
-            <span>Sign in with LinkedIn</span>
-          </a>
-          <a class="button social facebook active" :href="paths.signin_facebook + getQueryString()">
-            <v-icon>mdi-facebook</v-icon>
-            <span>Sign in with Facebook</span>
-          </a>
-          <a class="button social apple active" :href="paths.signin_apple + getQueryString()">
-            <v-icon>mdi-apple</v-icon>
-            <span>Sign in with Apple</span>
-          </a>
-        </div>
-      </v-card>
+      <AltAuthLinks :is-modal="isModal"></AltAuthLinks>
+      <OAuthLinks></OAuthLinks>
     </v-card>
   </div>
 </template>
 
 <script lang="ts">
 import {defineComponent} from 'vue';
+import OAuthLinks from '@/components/authExtLinks.vue';
+import AltAuthLinks from '@/components/authAltLinks.vue';
 // @ts-ignore
 import {getConnectionSettings} from '@/utils/appUtils';
 import {AuthAPI, LoginRequest} from "@/services/auth";
 import router from "@/router";
-// @ts-ignore
-import {paths} from "@/utils/paths";
 
 const authService = new AuthAPI(getConnectionSettings()).auth;
 
@@ -202,6 +107,10 @@ class Login {
 
 export default defineComponent({
   name: 'Login',
+  components: {
+    OAuthLinks,
+    AltAuthLinks
+  },
   props: {
     msg: String,
     static: Boolean,
@@ -210,7 +119,6 @@ export default defineComponent({
     modelValue: String
   },
   emits: ['loginSuccess', 'update:modelValue'],
-  components: {},
   mounted() {
     if (this.$route.query?.msg) {
       // Support for either a single string or array of strings in the 'msgs' query string param.
@@ -221,11 +129,9 @@ export default defineComponent({
   data() {
     return {
       messages: typeof this.$route.query.msg === 'string' ? this.$route.query.msg : this.$route.query.msg?.join(",") || "",
-      nameErrors: "",
+      usernameErrors: "",
       emailErrors: "",
       passwordErrors: "",
-      paths: paths,
-      oAuthQS: "",
       visible: false
     }
   },
@@ -237,7 +143,7 @@ export default defineComponent({
       e.preventDefault();
 
       this.messages = "";
-      this.nameErrors = "";
+      this.usernameErrors = "";
       this.emailErrors = "";
       this.passwordErrors = "";
 
@@ -257,28 +163,16 @@ export default defineComponent({
           }
         })
         .catch((response: any) => {
-          this.messages = `${response.body.name}: ${response.body.description}`;
-          return e;
+          console.log("errors: ", response.body);
+          const errors = response.body.errorMap;
+          this.usernameErrors = errors.username?.join(" ") || "";
+          this.emailErrors = errors.email?.join(" ") || "";
+          this.passwordErrors = errors.password?.join(" ") || "";
+          this.messages = `${response.body.name}: ${response.body.description || ""}`;
+          return response;
         });
 
       return false;
-    },
-    getQueryString() {
-      let qs = this.oAuthQS;
-      if (qs) {
-        return qs;  // If the query string was already built, use it.
-      }
-      // Otherwise, build the query string.
-      qs = "?";
-      if (this.$route.query?.path) {    // If a path is provided, include it.
-        qs += `next_url=${this.$route.query.path}`;
-      }
-      if (this.$route.query?.token || this.$route.query?.path?.includes("token")) {    // If a token is provided, include it.
-        if (qs.includes('=')) qs += '&';    // If we added a previous param, include the '&' to separate this one.
-        const token = this.$route.query?.token || this.$route.query?.path?.toString().split("token=")[1].split("&")[0];
-        qs += `invite_token=${token}`;
-      }
-      return this.oAuthQS = qs;   // Save the built query string (so we don't build for each oAuth provider)
     },
     goToPath(inPath = "/") {
       this.$router.push(inPath);
@@ -291,100 +185,4 @@ export default defineComponent({
 @import '../assets/styles/authForms2.css';
 @import "@fontsource/roboto";
 
-a {
-  text-decoration: none;
-  cursor: pointer;
-}
-
-a.social {
-  color: white;
-  text-align: left;
-  transition: filter, background-color .5s;
-}
-
-a.social:hover {
-  z-index: 1;
-}
-
-a.social i.v-icon {
-  margin-right: 22px;
-  transition: margin .5s;
-  vertical-align: text-bottom;
-}
-
-.social span {
-  font-size: 16px;
-  transition: vertical-align .5s;
-  vertical-align: center;
-}
-
-/*************************************************************/
-/* https://developers.google.com/identity/branding-guidelines */
-/*************************************************************/
-a.google {
-  /*background-color: #4285f4;*/
-  /*background-color: #34a853;*/
-  /*background-color: #fbbc05;*/
-  /*background-color: #ea4335;*/
-}
-
-a.google:hover {
-  font-family: Roboto-Medium, Roboto, Helvetica, Arial, sans-serif;
-  font-weight: 500;
-  color: #757575;
-  box-shadow: 0px 2px 3px rgba(0, 0, 0, .33);
-  background: url('/public/img/icons/btn_google_light_normal_ios.svg') white no-repeat;
-  background-size: contain;
-}
-
-a.google:hover i.v-icon {
-  visibility: hidden;
-}
-
-/*************************************************************/
-/* https://brand.linkedin.com/en-us */
-/*************************************************************/
-.linkedin {
-  background-color: #0a66c2;
-}
-
-a.linkedin:hover {
-  background-color: #006097;
-}
-
-/*************************************************************/
-/* */
-/*************************************************************/
-.facebook {
-  background-color: #1877f2;
-}
-
-/*************************************************************/
-/* https://developer.apple.com/design/human-interface-guidelines/technologies/sign-in-with-apple/# */
-/*************************************************************/
-.apple {
-  background-color: black;
-}
-
-a.apple:hover {
-  color: black;
-  background-color: white;
-  box-shadow: 0 0 1px 1px rgb(83, 83, 83);
-}
-
-/*
-a.apple:hover span {
-  vertical-align: sub;
-  vertical-align: sub;
-  font-weight: 600;
-  font-size: 18px;
-}
-*/
-
-/*a.apple:hover i.v-icon {
-  font-size: 17px;
-  vertical-align: sub;
-  margin-left: 23%;
-  margin-right: 5px;
-}*/
 </style>

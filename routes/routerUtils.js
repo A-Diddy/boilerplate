@@ -68,11 +68,12 @@ const checkUser = (req, res, next) => {
 }
 
 class ErrorResponse {
-  constructor(name, code, description, errors) {
+  constructor(name, code, description, errors, errorMap) {
     this.name = name ?? "Error";
     this.code = code ?? "";
     this.description = description ?? "";
     this.errors = errors || [];
+    this.errorMap = errorMap || {};
   }
 }
 
