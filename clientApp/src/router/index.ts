@@ -21,7 +21,7 @@ const authService = new AuthAPI(getConnectionSettings()).auth;
  ***********************************************/
 const auth = (to: any) => {
   if (!isAuthenticated() && to.name !== 'login') {
-    return {name: 'login', query: {r: to.name}};    // Route to login and set redirect ('r') query param.
+    return {name: 'login', query: {path: to.name}};    // Route to login and set redirect ('r') query param.
   } else {
     console.log("[router] auth(): Allowing access to: ", to.path);
   }
