@@ -1,6 +1,10 @@
 .auth_messages {
   color: red;
-  height: 24px;
+  min-height: 24px;
+}
+
+.auth_messages.success {
+  color: green;
 }
 
 .auth_container {

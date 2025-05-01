@@ -965,12 +965,13 @@ components:
       properties: {}
     SendForgotPasswordRequest:
       type: object
+      description: Either email or username can be used. If both are provided, username will have priority.
       properties:
         email:
           type: string
           format: email
-      required:
-        - email
+        username:
+          type: string
     SendForgotPasswordResponse:
       type: object
       properties: {}
@@ -979,10 +980,13 @@ components:
       properties:
         password:
           type: string
+        confirmPassword:
+          type: string
         token:
           type: string
       required:
         - password
+        - confirm_password
         - token
     ResetPasswordResponse:
       type: object

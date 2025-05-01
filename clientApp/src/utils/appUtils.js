@@ -23,7 +23,7 @@ const DEFAULT_ROLE_TITLE = "Reach Talent, Inc.";
  * a resolved promise with the current permissions from memory.
  ****************************************************/
 export const getPermissions = async (force = false) => {
-  console.log("getPermisssions(): ");
+  console.log("getPermisssions(",force,"): ");
 
   // If the user is not authenticated, they have no permissions.
   if (!isAuthenticated()) {
@@ -958,7 +958,7 @@ export const getQueryString = (query = {}) => {
   // Otherwise, build the query string.
   qs = "?";
   if (query.path) {    // If a path is provided, include it.
-    qs += `next_url=${this.$route.query.path}`;
+    qs += `next_url=${query.path}`;
   }
   if (query.token || query.path?.includes("token")) {    // If a token is provided, include it.
     if (qs.includes('=')) qs += '&';    // If we added a previous param, include the '&' to separate this one.

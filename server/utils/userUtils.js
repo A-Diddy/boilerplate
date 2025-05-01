@@ -121,8 +121,8 @@ const validateUsername = (username = '') => {
  * @returns {string}: Error messages, if any. Otherwise, a blank string
  *****************************************************************/
 const validateEmail = (email = '') => {
-  const emailRegex = new RegExp("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$.");
-  if (emailRegex.test(email)) {
+  const emailRegex = new RegExp(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/);
+  if (!emailRegex.test(email)) {
     return 'Email is not valid';
   }
 

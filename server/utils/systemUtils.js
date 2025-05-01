@@ -178,3 +178,8 @@ exports.limitScope = (inFunc) => {
     console.log(e);
   }
 }
+
+// TODO: This... maybe.
+exports.setErrorResponse = (statusCode = 400, name = "Error", errCode = "1", msg = "", errors = []) => {
+
+}

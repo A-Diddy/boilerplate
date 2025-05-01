@@ -131,7 +131,7 @@ const createProfile = (tempProfile = {}) => {
  *
  *
  * @param {object} tokeRec: Token record from db
- * @param {number} addExpiryTime: Time (milliseconds) added to 'expire_in'
+ * @param {number} addExpiryTime: Time (milliseconds) added to 'expire_in' (buffer)
  * @return {boolean} TRUE: Token is valid | FALSE: Token is invalid
  *****************************************************/
 const isTokenValid = (tokeRec, addExpiryTime = 0) => {
@@ -621,7 +621,7 @@ router.get('/login', function (req, res, next) {
  */
 // router.post('/login/password', (req, res, next) => {
 
-router.use( (req, res, next) => {
+router.use((req, res, next) => {
   express.json();   // If request data comes over as form type, convert it to JSON
   // TODO: If we get to this point, everything should be JSON API responses... right?
   res.setHeader('Content-Type', 'application/json');
@@ -840,7 +840,7 @@ router.post('/forgot_password', async function (req, res) {
     .select('*')
     // .where({"username": username})
     // .orWhere({"email": email})
-    .where( (builder) => {
+    .where((builder) => {
       if (username) {
         builder.where("username", username);
       } else if (email) {
@@ -880,7 +880,9 @@ router.post('/forgot_password', async function (req, res) {
     user_id: user.id,
     token: token,
     expire_in: lifetime,
-    json_data: {resetCount: 1}
+    json_data: {resetCount: 1},
+    created_by: user.id,
+    owned_by: user.id
   }
 
   // Save reset token
@@ -927,14 +929,31 @@ router.post('/forgot_password', async function (req, res) {
   };
 
   // TODO: Modularize mailer...
+
+  const transporterOptions = {
+    auth: {
+      user: process.env.EMAIL_ADDRESS,
+      pass: process.env.EMAIL_PASSWORD
+    }
+  }
+
+  if (process.env.EMAIL_SERVICE === "other") {
+    if (!process.env.EMAIL_SMTP_HOST || !process.env.EMAIL_SMTP_PORT) {
+      console.log("[AuthRouter] sending email... ERROR: Missing one or more config params; 'EMAIL_SMTP_HOST' and 'EMAIL_SMTP_PORT'")
+    }
+    transporterOptions.host = process.env.EMAIL_SMTP_HOST;
+    transporterOptions.port = process.env.EMAIL_SMTP_PORT;
+    transporterOptions.secure = process.env.EMAIL_SMTP_SECURE === 'true';
+    transporterOptions.tls = {
+      // Do not fail on invalid certs
+      rejectUnauthorized: process.env.EMAIL_SMTP_TLS_REJECTUNAUTHERIZED === 'true'
+    }
+  } else {
+    transporterOptions.service = process.env.EMAIL_SERVICE;
+  }
+
   try {
-    const transporter = await nodemailer.createTransport({
-      service: process.env.EMAIL_SERVICE,
-      auth: {
-        user: process.env.EMAIL_ADDRESS,
-        pass: process.env.EMAIL_PASSWORD
-      }
-    });
+    const transporter = await nodemailer.createTransport(transporterOptions);
 
     await transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
@@ -1048,8 +1067,8 @@ router.get('/reset_password/:token', async function (req, res) {
  ********************************************************************/
 router.post('/reset_password', async function (req, res) {
   // console.log("[Auth] POST/reset(): req.body = ", req.body);
-  const happyTime = 1000 * 60 * 2;  // 2 minutes in milliseconds
-  const userId = req.body.userId;
+  const happyTime = 1000 * 60 * 2;  // 2 minutes in milliseconds (buffer added to expire time, for user happiness)
+  let userId = req.body.userId;
   const token = req.body.token;
   const password = req.body.password;
   const confirmPassword = req.body.confirm_password
@@ -1057,25 +1076,21 @@ router.post('/reset_password', async function (req, res) {
 
   // console.log({userId, token});
 
-  if (!userId || !token) {
-    // TODO: Convert to ErrorResponse object...
-    // return res.send('Invalid request... missing user and/or token parameters');
-    msg = "Missing user and/or token parameters";
+  if (!token) {
+    msg = "Missing token parameter";
     return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
   }
 
   // Check that password and confirm_password match
   if (password !== confirmPassword) {
-    // TODO: Convert to ErrorResponse object...
-    // return res.send('New password confirmation does not match');
     msg = "New password confirmation does not match";
     return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
   }
 
-  // Check if token is still valid for userId
+  // Check if token is still valid
   const user = await knexInstance(TOKENS_TABLE)
     .select('*')
-    .where({token: token, entity: PASSWORD_ENTITY, user_id: userId})
+    .where({token: token, entity: PASSWORD_ENTITY})
     .then(async (results) => {
       if (results.length > 0) {
         const tokeRec = results[0];
@@ -1085,12 +1100,12 @@ router.post('/reset_password', async function (req, res) {
           return;
         }
         // Got valid token
-        const userId = tokeRec.user_id;
+        userId = tokeRec.user_id;   // Save the user_id
 
         // Get user record to confirm it exists.
         return await knexInstance(USERS_TABLE)
           .select('*')
-          .where({id: userId})
+          .where({id: tokeRec.user_id})
           .then((results) => {
             if (results.length > 0) {
               return results[0];
@@ -1101,16 +1116,17 @@ router.post('/reset_password', async function (req, res) {
           })
           .catch((e) => {
             console.log(e);
-            // TODO: Send an ErrorResponse
-            return next(e);
+            msg = "Unable to retrieve user information. Please try again later."
+            res.status(500);
+            return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
           });
       }
     })
 
   if (!user || !user.id) {
-    console.log("Unable to find user for provided token: ", user);
-    // TODO: Convert to ErrorResponse object...
-    // return res.send(msg);
+    msg = `Unable to find user for provided token: ${token}`;
+    console.log(msg);
+    res.status(406);
     return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
   }
 
@@ -1118,8 +1134,10 @@ router.post('/reset_password', async function (req, res) {
   const salt = crypto.randomBytes(16);
   crypto.pbkdf2(password, salt, 310000, 32, 'sha256', async function (err, hashedPassword) {
     if (err) {
-      // TODO: Send an ErrorResponse
-      return next(err);
+      msg = `Unable to hash new password: ${err}`;
+      console.log(msg);
+      res.status(406);
+      return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
     }
 
     const columns = {
@@ -1130,32 +1148,30 @@ router.post('/reset_password', async function (req, res) {
     await knexInstance(USERS_TABLE)
       .update(columns)
       .where({id: userId})
-      .returning(["id", "name"])
+      .returning(["id", "username"])
       .then((result,) => {
-        // console.log("[Auth] POST/reset: UPDATE Result = ", result);
-
-        const user = {
-          id: result.id,
-          username: result.name
-        };
-
         req.login(user, function (err) {
           if (err) {
-            // TODO: Send an ErrorResponse
-            return next(err);
+            msg = `Unable to authenticate with new password. Try logging in manually: ${err}`;
+            console.log(msg);
+            res.status(406);
+            return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
           }
-          // res.redirect('/');    // This should return the user to the client SPA (or SSR of the home page)
-          return res.end(JSON.stringify(new GenericResponse("Success", "1", msg, [msg])));
+
+          userIdCookie(req, res); // Don't include a next() function to call since we're handling the send here.
+          res.status(200);
+          return res.end(JSON.stringify({id: user.id, username: user.username}));
         });
       })
       .catch((e) => {
-        console.log(e);
-        // TODO: Send an ErrorResponse
-        return next(e);
+        msg = `Unable to update password: ${e}`;
+        console.log(msg);
+        res.status(500);
+        return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
       });
   });
 
-  // TODO: Invalidate token??
+  // POTENTIAL_ENHANCEMENT: Invalidate token??
 });
 
 /*******************************************************
@@ -1243,18 +1259,18 @@ router.post('/change_password', async function (req, res) {
 router.get('/userPermissions',
   AuthService.hasPriv(),
   function (req, res) {
-  console.log("[Auth] GET/userPermissions: user = ", req.user);
-  const userId = req.user?.id;
+    console.log("[Auth] GET/userPermissions: user = ", req.user);
+    const userId = req.user?.id;
 
-  AuthService.getUserPermissions(userId).then((result) => {
-    res.status(200);
-    return res.end(JSON.stringify(result));
-  }).catch((msg) => {
-    logger.info(msg);
-    res.status(406);
-    return res.end(JSON.stringify(new ErrorResponse("Invalid Request", "1", msg, [])));
-  })
-});
+    AuthService.getUserPermissions(userId).then((result) => {
+      res.status(200);
+      return res.end(JSON.stringify(result));
+    }).catch((msg) => {
+      logger.info(msg);
+      res.status(406);
+      return res.end(JSON.stringify(new ErrorResponse("Invalid Request", "1", msg, [])));
+    })
+  });
 
 
 router.post('/updateSession', (req, res, next) => {

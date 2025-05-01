@@ -17,7 +17,7 @@
   </v-banner>
 
   <v-banner
-    v-if="mode !== 'signup'"
+    v-if="mode !== 'signup' || mode === 'resetPassword'"
     lines="one"
   >
     <template v-slot:text>
@@ -34,6 +34,7 @@
   </v-banner>
 
   <v-banner
+    v-if="mode !== 'resetPassword'"
     lines="one"
   >
     <template v-slot:text>

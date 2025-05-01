@@ -98,7 +98,7 @@ const routes: Array<RouteRecordRaw> = [
     name: 'forgotPassword',
     component: ForgotPasswordView
   }, {
-    path: '/reset_password',
+    path: '/reset_password/:token?',
     name: 'reset_password',
     component: ResetPasswordView
   }

@@ -62,21 +62,45 @@
             :error-messages="passwordErrors">
           </v-text-field>
 
+          <v-divider></v-divider>
+
           <v-btn
             class="mb-8"
             size="large"
             variant="outlined"
             color=""
             block
-            id="button_login"
             type="submit"
+            id="button_login"
           >
             Log In
+          </v-btn>
+          <v-btn
+            class="mb-8"
+            size="large"
+            variant="outlined"
+            color=""
+            block
+            type="submit"
+            id="button_signup"
+          >
+            Sign Up
+          </v-btn>
+          <v-btn
+            class="mb-8"
+            size="large"
+            variant="outlined"
+            color=""
+            block
+            type="submit"
+            id="button_forgotPassword"
+          >
+            Forgot Password
           </v-btn>
         </section>
       </form>
 
-      <AltAuthLinks :is-modal="isModal"></AltAuthLinks>
+<!--      <AltAuthLinks :is-modal="isModal" mode="resetPassword"></AltAuthLinks>-->
       <OAuthLinks></OAuthLinks>
     </v-card>
   </div>
@@ -88,7 +112,7 @@ import OAuthLinks from '@/components/authExtLinks.vue';
 import AltAuthLinks from '@/components/authAltLinks.vue';
 // @ts-ignore
 import {getConnectionSettings} from '@/utils/appUtils';
-import {AuthAPI, LoginRequest} from "@/services/auth";
+import {AuthAPI, LoginRequest, SendForgotPasswordRequest, SignupRequest} from "@/services/auth";
 import router from "@/router";
 
 const authService = new AuthAPI(getConnectionSettings()).auth;
@@ -118,12 +142,11 @@ export default defineComponent({
     selectedView: String,
     modelValue: String
   },
-  emits: ['loginSuccess', 'update:modelValue'],
+  emits: ['loginSuccess', 'signUpSuccess', 'update:modelValue'],
   mounted() {
     if (this.$route.query?.msg) {
       // Support for either a single string or array of strings in the 'msgs' query string param.
-      const msgs = typeof this.$route.query.msg === 'string' ? this.$route.query.msg : this.$route.query.msg.join(",");
-      this.messages = msgs;
+      this.messages = typeof this.$route.query.msg === 'string' ? this.$route.query.msg : this.$route.query.msg.join(",");
     }
   },
   data() {
@@ -146,11 +169,25 @@ export default defineComponent({
       this.usernameErrors = "";
       this.emailErrors = "";
       this.passwordErrors = "";
+      const authData = new Login(new FormData(e.target));
+      let response;
 
-      const loginReq = new Login(new FormData(e.target));
+      if (e.submitter.id === "button_signup") {
+        response = authService.signup(<SignupRequest>authData);
+      } else if (e.submitter.id === "button_forgotPassword") {
+        response = authService.sendForgotPassword(<SendForgotPasswordRequest>authData)
+      } else {
+        response = authService.login(<LoginRequest>authData);
+      }
 
-      authService.login(<LoginRequest>loginReq)
+      response
         .then(() => {
+          if (e.submitter.id === "button_forgotPassword") {
+            this.messages = "An email has been sent with further instructions.";
+            return;
+          }
+
+          // Otherwise, we authenticated...
           getConnectionSettings(true); // Refresh auth cookie
 
           if (this.isModal) {  // Modals handle themselves
@@ -173,9 +210,6 @@ export default defineComponent({
         });
 
       return false;
-    },
-    goToPath(inPath = "/") {
-      this.$router.push(inPath);
     }
   }
 })
