@@ -67,6 +67,15 @@ const checkUser = (req, res, next) => {
   }
 }
 
+/**********************************************************
+ * ErrorResponse Class
+ *
+ *    name: Error name (default = "Error")
+ *    code: Code identifier for the error (not HTML status)
+ *    description: Generic description of the error
+ *    errors: Array of error messages.
+ *    errorMap: A map of error message arrays. (i.e. {name: [Must be 2 characters long]})
+ **********************************************************/
 class ErrorResponse {
   constructor(name, code, description, errors, errorMap) {
     this.name = name ?? "Error";

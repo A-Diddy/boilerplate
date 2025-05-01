@@ -77,21 +77,29 @@
             </v-avatar>
           </v-list-item-title>
         </v-list-item>
-        <v-list-item @click="this.$router.push('/profile')">
+        <v-list-item
+          v-if="authenticated"
+          @click="this.$router.push('/profile')">
           <v-icon icon="mdi-account-edit"></v-icon>
           Edit profile
         </v-list-item>
-        <v-list-item @click="this.$router.push('/change_password')">
+        <v-list-item
+          v-if="authenticated"
+          @click="this.$router.push('/change_password')">
           <v-icon icon="mdi-lock"></v-icon>
 <!--          <a href="/changePassword">-->
             Change Password
 <!--          </a>-->
         </v-list-item>
-        <v-list-item @click="login()">
+        <v-list-item
+          v-if="!authenticated"
+          @click="login()">
           <v-icon icon="mdi-login"></v-icon>
           Sign in
         </v-list-item>
-        <v-list-item @click="logout()">
+        <v-list-item
+          v-if="authenticated"
+          @click="logout()">
           <v-icon icon="mdi-logout"></v-icon>
           Sign out
         </v-list-item>
@@ -104,6 +112,8 @@
 import {defineComponent} from 'vue';
 // @ts-ignore
 import {getUserName, getToken} from "@/utils/appUtils.js";
+// @ts-ignore
+import {isAuthenticated} from "@/utils/appUtils.js";
 
 export default defineComponent({
   name: 'HeaderComp',
@@ -112,15 +122,16 @@ export default defineComponent({
   },
   data() {
     return {
-      title: import.meta.env.TITLE,
+      title: import.meta.env.VITE_APP_TITLE,
       user: 'Default',
       token: 'default',
-      model: null
+      model: null,
+      authenticated: false
     }
   },
   created() {
-    this.user = getUserName();
     this.token = getToken();
+    this.sessionUpdated();
     document.addEventListener('sessionUpdated', this.sessionUpdated);
     console.log('token: ', this.token);
     console.log('user: ', this.user);
@@ -138,6 +149,7 @@ export default defineComponent({
     },
     sessionUpdated() {
       this.user = getUserName();
+      this.authenticated = isAuthenticated();
     }
   }
 })

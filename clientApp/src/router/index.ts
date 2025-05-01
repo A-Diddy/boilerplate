@@ -102,12 +102,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'reset_password',
     component: ResetPasswordView
   }
-  // TODO: Change password... (when authenticated, enter the current password and the new password + confirm)
-  // , {
-  //   path: '/change_password',
-  //   name: 'changePassword',
-  //   component: () => import('../views/ForgotPasswordView.vue')
-  // }
+  , {
+    path: '/change_password',
+    name: 'changePassword',
+    component: () => import('../views/ChangePasswordView.vue')
+  }
   , {
     path: '/verify_email',
     name: 'verify_email',
@@ -115,7 +114,7 @@ const routes: Array<RouteRecordRaw> = [
   }, {
     path: '/logout',
     name: 'logout',
-    beforeEnter: [unauth],      // TODO: Test that this calls logout
+    beforeEnter: [unauth],
     // component: HomeView
     component: LoginView
   }, {

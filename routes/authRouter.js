@@ -415,7 +415,7 @@ if (process.env['LINKEDIN_AUTH'] === "true") {
       if (err) {
         return cb(err);
       }
-      var cred = {
+      let cred = {
         id: profile.id,
         provider: 'https://linkedin.com'
       };
@@ -445,7 +445,7 @@ if (process.env['FACEBOOK_AUTH'] === "true") {
       if (err) {
         return cb(err);
       }
-      var cred = {
+      let cred = {
         id: profile.id,
         provider: 'https://www.facebook.com'
       };
@@ -470,7 +470,7 @@ if (process.env['TWITTER_AUTH'] === "true") {
       if (err) {
         return cb(err);
       }
-      var cred = {
+      let cred = {
         id: profile.id,
         provider: 'https://twitter.com'
       };
@@ -816,7 +816,7 @@ router.get('/forgot', function (req, res) {
  *    change the password.
  *
  *    The link will contain a token string, which is submitted
- *    with the request to change the password (POST->change_password).
+ *    with the request to change the password (POST->/reset_password/:token).
  ******************************************************************/
 router.post('/forgot_password', async function (req, res) {
   // console.log("[Auth] POST/forgot_password(): req.body = ", req.body);
@@ -1174,6 +1174,7 @@ router.post('/reset_password', async function (req, res) {
   // POTENTIAL_ENHANCEMENT: Invalidate token??
 });
 
+// TODO: Remove this GET function... not needed in api since requests will be POST only (right?).
 /*******************************************************
  * Change password.
  *
@@ -1196,7 +1197,9 @@ router.get('/change_password', function (req, res) {
  * Change Password
  *
  *   Changes the password for users already logged in (requires
- *   an active session).
+ *   an active session). Provided the existing password, will
+ *   update to the new password.
+ *
  *   This is not associated with the "Reset Password" flow.
  ********************************************************/
 router.post('/change_password', async function (req, res) {
@@ -1206,46 +1209,58 @@ router.post('/change_password', async function (req, res) {
   const newPassword = req.body.password;
   const confirmPassword = req.body.confirm_password;
 
+  const errorMap = {
+    existing_password: [],
+    password: [],
+    confirm_password: []
+  };
+
   // console.log("[Auth] POST/changePassword: ", {userId, existingPassword, newPassword, confirmPassword});
 
   if (!userId) {
     // msg = 'Please login first to change the password.';
-    return res.redirect('/login')
+    msg = `Please login first to change the password`;
+    console.log(msg);
+    res.status(406);
+    return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [])));
+    // return res.redirect('/login')
   }
 
   // TODO: Check if password meets criteria
 
   // Check that password and confirm_password match
   if (newPassword !== confirmPassword) {
-    return res.send('New password confirmation does not match');
+    msg = `New password confirmation does not match`;
+    errorMap.confirm_password.push(msg);
+    console.log(msg);
+    res.status(406);
+    return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [], errorMap)));
   }
 
   // Check if existing_password matches
   const isPasswordValid = await verifyPassword(userId, existingPassword)
     .then((result) => {
-      // console.log("isPasswordValid() result = ", result);
       return result;
     });
-  // console.log("isPasswordValid = ", isPasswordValid);
+
   if (!isPasswordValid) {
-    return res.send('Existing password is incorrect');
+    msg = `Existing password is incorrect`;
+    errorMap.existing_password.push(msg);
+    console.log(msg);
+    res.status(406);
+    return res.end(JSON.stringify(new ErrorResponse("Error", "1", msg, [], errorMap)));
+    // return res.send('Existing password is incorrect');
   }
 
-  // req.login(user, function (err) {
-  //   if (err) {
-  //     return res.send(err);
-  //   }
-  // });
-
   // Save new password
-  const updateResponse = await updateUserPassword(userId, newPassword);
-
-  // console.log("updateResponse = ", updateResponse);
-  msg = 'Password updated.';
+  await updateUserPassword(userId, newPassword);
 
   // Send message that password was changed successfully
+  msg = `Password updated`;
+  res.status(200);
 
-  return res.send(msg);
+  return res.end(JSON.stringify(new GenericResponse("Error", "1", msg, [], errorMap)));
+  return res.end(msg);
 })
 
 

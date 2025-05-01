@@ -169,6 +169,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /auth/change_password:
+    post:
+      operationId: changePassword
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      summary: Change Password
+      description: Change password to a new one provided an active session and the existing password.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /auth/userPermissions:
     get:
       operationId: getPermissions
@@ -898,6 +924,7 @@ components:
     GenericResponse:
       type: object
       properties: {}
+      additionalProperties: true
     LoginRequest:
       type: object
       properties:
@@ -1002,6 +1029,19 @@ components:
           type: string
         action:
           type: string
+    ChangePasswordRequest:
+      type: object
+      properties:
+        existing_password:
+          type: string
+        password:
+          type: string
+        confirm_password:
+          type: string
+      required:
+        - existing_password
+        - password
+        - confirm_password
     GetPermissionResponse:
       type: object
       properties:
